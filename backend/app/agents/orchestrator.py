@@ -35,11 +35,12 @@ from __future__ import annotations
 
 import json
 import logging
+import operator
 import os
 import re
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Annotated, Any, Dict, List, Optional, TypedDict
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
@@ -87,7 +88,7 @@ class PaperLensState(TypedDict):
     final_review: Optional[Dict[str, Any]]
 
     retrieval_traces: Dict[str, List[dict]]
-    errors: List[str]
+    errors: Annotated[List[str], operator.add]
     _db_callback: Any
 
 
@@ -242,7 +243,7 @@ def _make_primary_node(group: str):
             observability.event(state["job_id"], "node_error", role, {"error": msg}, (time.time() - _node_t0) * 1000)
             return {
                 f"group_{group.lower()}_primary": None,
-                "errors": state.get("errors", []) + [f"{role}: {msg}"],
+                "errors": [f"{role}: {msg}"],
             }
 
     return node
@@ -310,7 +311,7 @@ def _make_critic_node(group: str):
             observability.event(state["job_id"], "node_error", role, {"error": msg}, (time.time() - _node_t0) * 1000)
             return {
                 f"group_{group.lower()}_critic": None,
-                "errors": state.get("errors", []) + [f"{role}: {msg}"],
+                "errors": [f"{role}: {msg}"],
             }
 
     return node
@@ -342,7 +343,7 @@ def node_synthesize(state: PaperLensState) -> dict:
         msg = str(exc)
         logger.error("synthesizer failed: %s", msg)
         _db_write(state, "FINAL", "synthesizer", override or "unknown", None, msg)
-        return {"final_review": None, "errors": state.get("errors", []) + [f"synthesizer: {msg}"]}
+        return {"final_review": None, "errors": [f"synthesizer: {msg}"]}
 
 
 # ── Graph wiring ───────────────────────────────────────────────────────────────
