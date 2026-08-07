@@ -1,0 +1,2 @@
+{"paper_id": "sample_001", "title": "Example Paper Title", "authors": "A. Author, B. Author", "text": "PASTE THE FULL EXTRACTED PAPER TEXT HERE (abstract through references)", "human_recommendation": "Minor Revision", "human_score": 7.0}
+{"paper_id": "sample_002", "title": "Another Example Paper", "authors": "C. Author", "text": "PASTE THE FULL EXTRACTED PAPER TEXT HERE", "human_recommendation": "Reject", "human_score": 3.5}

@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+papers/
+papers_batch2/
+training_data.jsonl
+generation_progress.txt
+papers_text.jsonl
+papers_text_batch2.jsonl
+finetune_ready.jsonl
+chroma_store/
+node_modules/
+dist/

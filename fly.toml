@@ -1,0 +1,36 @@
+# Fly.io deployment config for the backend.
+# Deploy: fly launch --dockerfile backend/Dockerfile (from repo root),
+# then fly secrets set SECRET_KEY=... DATABASE_URL=... etc.
+# See DEPLOYMENT.md for RAM sizing guidance — this config requests 1GB,
+# which fits torch+chromadb+sentence-transformers comfortably.
+
+app = "paperlens-backend"
+primary_region = "sin"  # change to your nearest region
+
+[build]
+  dockerfile = "backend/Dockerfile"
+
+[env]
+  PORT = "8000"
+  ENABLE_CNN_FIGURES = "true"
+  AGENTIC_RAG_ENABLED = "true"
+  RATE_LIMIT_DEFAULT = "60/minute"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0  # scales to zero when idle — good for a free-tier demo
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+
+[checks]
+  [checks.health]
+    port = 8000
+    type = "http"
+    path = "/health"
+    interval = "15s"
+    timeout = "5s"
