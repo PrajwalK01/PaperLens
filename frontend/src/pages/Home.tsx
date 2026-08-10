@@ -94,11 +94,11 @@ export default function Home() {
       {/* ── Upload card ────────────────────────────────────────────────── */}
       <div className="max-w-lg mx-auto">
         <div className="rounded-2xl border p-6"
-          style={{ background: '#18191c', borderColor: '#2a2b2e' }}>
+          style={{ background: 'rgba(99,102,241,0.04)', borderColor: 'rgba(99,102,241,0.18)', backdropFilter: 'blur(8px)' }}>
 
           {/* Mode toggle */}
           <div className="flex gap-1 mb-5 p-1 rounded-xl"
-            style={{ background: 'rgba(255,255,255,0.04)' }}>
+            style={{ background: 'rgba(99,102,241,0.08)' }}>
             {([
               ['pdf',   '📄', 'Upload PDF'],
               ['arxiv', '#',  'arXiv ID'],
@@ -122,12 +122,12 @@ export default function Home() {
             <div {...getRootProps()}
               className="mb-4 rounded-xl p-7 text-center cursor-default transition-all border-2 border-dashed"
               style={{
-                borderColor: isDragActive ? '#6366f1' : dropped ? '#10b981' : '#2a2b2e',
+                borderColor: isDragActive ? '#6366f1' : dropped ? '#10b981' : 'rgba(99,102,241,0.25)',
                 background: isDragActive
-                  ? 'rgba(99,102,241,0.08)'
+                  ? 'rgba(99,102,241,0.1)'
                   : dropped
-                  ? 'rgba(16,185,129,0.06)'
-                  : 'rgba(255,255,255,0.02)',
+                  ? 'rgba(16,185,129,0.07)'
+                  : 'rgba(99,102,241,0.04)',
               }}>
               <input {...getInputProps()} />
               {dropped ? (
@@ -169,20 +169,19 @@ export default function Home() {
           {/* arXiv input */}
           {mode === 'arxiv' && (
             <div className="mb-4 relative">
-              <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+              <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400/50" />
               <input
                 value={arxivId}
                 onChange={e => { setArxivId(e.target.value); setError(null) }}
                 placeholder="e.g. 2301.00001 or arxiv.org/abs/2301.00001"
                 onKeyDown={e => e.key === 'Enter' && canSubmit && submit()}
-                className="w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none transition-all text-zinc-200 placeholder:text-zinc-700"
+                className="w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none transition-all text-indigo-100 placeholder:text-indigo-400/30"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid #2a2b2e',
-                  outline: 'none',
+                  background: 'rgba(99,102,241,0.07)',
+                  border: '1px solid rgba(99,102,241,0.2)',
                 }}
                 onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.6)'}
-                onBlur={e => e.target.style.borderColor = '#2a2b2e'}
+                onBlur={e => e.target.style.borderColor = 'rgba(99,102,241,0.2)'}
               />
             </div>
           )}
@@ -217,9 +216,9 @@ export default function Home() {
         </div>
 
         {/* ── Pipeline diagram ──────────────────────────────────────────── */}
-        <div className="mt-4 rounded-2xl border p-5"
-          style={{ background: '#18191c', borderColor: '#2a2b2e' }}>
-          <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 text-center">
+        <div className="mt-4 rounded-2xl p-5"
+          style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)' }}>
+          <p className="text-[10px] font-black text-indigo-400/40 uppercase tracking-widest mb-4 text-center">
             5-Agent Review Pipeline
           </p>
 
@@ -258,9 +257,9 @@ export default function Home() {
 
           {/* Synthesizer */}
           <div className="flex items-center gap-2 mb-3">
-            <div className="flex-1 h-px" style={{ background: '#2a2b2e' }} />
-            <span className="text-[10px] text-zinc-700">converge</span>
-            <div className="flex-1 h-px" style={{ background: '#2a2b2e' }} />
+            <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.2)' }} />
+            <span className="text-[10px] text-indigo-400/40">converge</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.2)' }} />
           </div>
           <div className="rounded-xl p-3 text-center"
             style={{
@@ -271,7 +270,7 @@ export default function Home() {
               <Sparkles className="w-3.5 h-3.5 text-violet-400" />
               <p className="text-[11px] font-bold text-violet-300">Synthesizer Agent</p>
             </div>
-            <p className="text-[10px] text-zinc-600 mt-1">Final verdict · Score /10 · Confidence · Recommendation</p>
+            <p className="text-[10px] text-indigo-300/40 mt-1">Final verdict · Score /10 · Confidence · Recommendation</p>
           </div>
         </div>
 

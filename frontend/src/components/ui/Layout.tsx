@@ -105,7 +105,7 @@ export default function Layout() {
 
   return (
     <AuthContext.Provider value={{ user, refresh: refreshUser, openAuth }}>
-        <div className="flex flex-col h-screen bg-[#111214] font-sans overflow-hidden">
+        <div className="flex flex-col h-screen bg-[#0d0f1a] font-sans overflow-hidden">
 
           {/* ── Top Nav ───────────────────────────────────────────────── */}
           <TopNav user={user} showUserMenu={showUserMenu}
@@ -120,12 +120,12 @@ export default function Layout() {
           <div className="flex-1 flex overflow-hidden">
 
             {/* LEFT: Activity + Nav */}
-            <aside className="w-[240px] bg-[#18191c] flex flex-col shrink-0 text-slate-300 border-r border-[#2a2b2e]">
-              <div className="px-4 pt-4 pb-3 border-b border-[#2a2b2e]">
+            <aside className="w-[240px] bg-[#13151f] flex flex-col shrink-0 text-slate-300 border-r border-[#252840]">
+              <div className="px-4 pt-4 pb-3 border-b border-[#252840]">
                 <h2 className="font-bold text-white text-sm tracking-tight">Activity History</h2>
-                <p className="text-[10px] text-zinc-500 mt-0.5">Your project timeline</p>
+                <p className="text-[10px] text-indigo-400/60 mt-0.5">Your project timeline</p>
               </div>
-              <nav className="px-2 py-2 border-b border-[#2a2b2e] flex flex-col gap-0.5">
+              <nav className="px-2 py-2 border-b border-[#252840] flex flex-col gap-0.5">
                 <SideNavLink to="/" label="Home" icon={<Home size={14} />} current={location.pathname} />
                 <SideNavLink to="/dashboard" label="Dashboard" icon={<LayoutDashboard size={14} />} current={location.pathname} />
                 <SideNavLink to="/history" label="Review History" icon={<History size={14} />} current={location.pathname} />
@@ -167,7 +167,7 @@ export default function Layout() {
             </aside>
 
             {/* CENTER: Main content */}
-            <main className="flex-1 overflow-y-auto bg-[#111214]">
+            <main className="flex-1 overflow-y-auto bg-[#0d0f1a]">
               <div className="max-w-4xl mx-auto h-full p-6">
                 <Outlet />
               </div>
@@ -189,7 +189,7 @@ export default function Layout() {
           <style>{`
             .custom-scrollbar::-webkit-scrollbar { width: 3px; }
             .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-            .custom-scrollbar::-webkit-scrollbar-thumb { background: #3a3b3e; border-radius: 4px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: #252840; border-radius: 4px; }
           `}</style>
         </div>
     </AuthContext.Provider>
@@ -262,18 +262,17 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
     ? ['Summarise this paper', 'Explain the methodology', 'What are the key weaknesses?', 'Find related work']
     : ['What makes a good paper?', 'Explain peer review', 'How does LangGraph work?'];
 
-  return (
-    <aside className="w-[320px] bg-[#18191c] border-l border-[#2a2b2e] flex flex-col shrink-0">
+    <aside className="w-[320px] bg-[#13151f] border-l border-[#252840] flex flex-col shrink-0">
 
       {/* Header */}
-      <div className="h-14 border-b border-[#2a2b2e] flex items-center justify-between px-4 shrink-0">
+      <div className="h-14 border-b border-[#252840] flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="relative">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
               <Sparkles size={15} className="text-white" />
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#18191c] rounded-full" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#13151f] rounded-full" />
           </div>
           <div>
             <p className="text-sm font-bold text-white">Research Assistant</p>
@@ -282,18 +281,18 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
         </div>
         <div className="flex items-center gap-1">
           <button onClick={clear} title="Clear chat"
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:bg-white/8 hover:text-zinc-300 transition-colors">
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-indigo-400/40 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors">
             <Trash2 size={13} />
           </button>
           <button onClick={onClose} title="Close chat"
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:bg-white/8 hover:text-zinc-300 transition-colors">
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-indigo-400/40 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors">
             <X size={14} />
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" style={{ scrollbarColor: '#2a2b2e transparent' }}>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" style={{ scrollbarColor: '#252840 transparent' }}>
         {messages.map((msg, i) => (
           <ChatBubble key={i} msg={msg} />
         ))}
@@ -312,11 +311,12 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
 
         {messages.filter(m => m.role === 'user').length === 0 && !streaming && (
           <div className="space-y-1.5 mt-2">
-            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider px-1">Try asking</p>
+            <p className="text-[10px] font-bold text-indigo-400/50 uppercase tracking-wider px-1">Try asking</p>
             {SUGGESTIONS.map(s => (
               <button key={s} onClick={() => { setInput(s); }}
-                className="w-full text-left text-xs text-zinc-400 bg-white/4 hover:bg-indigo-500/15 hover:text-indigo-300
-                  border border-white/6 hover:border-indigo-500/30 rounded-lg px-3 py-2 transition-colors">
+                className="w-full text-left text-xs text-indigo-200/70 hover:text-indigo-200
+                  border rounded-lg px-3 py-2 transition-all hover:border-indigo-500/40"
+                style={{ background: 'rgba(99,102,241,0.06)', borderColor: 'rgba(99,102,241,0.15)' }}>
                 {s}
               </button>
             ))}
@@ -327,38 +327,41 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-[#2a2b2e] shrink-0">
-        <div className="flex items-end gap-2 bg-[#1e1f21] border border-[#2a2b2e] rounded-xl
-          focus-within:border-indigo-500/50 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
+      <div className="p-3 border-t border-[#252840] shrink-0">
+        <div className="flex items-end gap-2 rounded-xl transition-all"
+          style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.18)' }}>
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder="Ask anything about your research…"
             rows={2}
-            className="flex-1 bg-transparent px-3 py-2.5 text-[13px] text-zinc-200 placeholder:text-zinc-600
+            className="flex-1 bg-transparent px-3 py-2.5 text-[13px] text-indigo-100/80 placeholder:text-indigo-400/30
               resize-none focus:outline-none leading-relaxed"
           />
           <div className="flex items-center gap-1 p-2">
             {streaming ? (
               <button onClick={stop}
-                className="w-8 h-8 flex items-center justify-center bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
+                className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
                 <div className="w-3 h-3 bg-red-400 rounded-sm" />
               </button>
             ) : (
               <button onClick={send} disabled={!input.trim()}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${
-                  input.trim()
-                    ? 'text-white shadow-lg'
-                    : 'bg-white/5 text-zinc-700 cursor-not-allowed'
-                }`}
-                style={input.trim() ? { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' } : {}}>
-                <Send size={14} />
+                className="w-8 h-8 flex items-center justify-center rounded-lg transition-all"
+                style={input.trim() ? {
+                  background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                  boxShadow: '0 2px 12px rgba(99,102,241,0.4)',
+                } : {
+                  background: 'rgba(99,102,241,0.08)',
+                  cursor: 'not-allowed',
+                }}>
+                <Send size={14} className={input.trim() ? 'text-white' : 'text-indigo-500/30'} />
               </button>
             )}
           </div>
         </div>
-        <p className="text-[10px] text-zinc-700 text-center mt-2">
+        <p className="text-[10px] text-indigo-400/30 text-center mt-2">
           {jobId ? '📄 Paper context active' : 'General research mode'} · Enter to send
         </p>
       </div>
@@ -370,7 +373,7 @@ function ChatBubble({ msg, streaming = false }: { msg: ChatMsg; streaming?: bool
   if (msg.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] text-white rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm"
+        <div className="max-w-[85%] text-white rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-[13px] leading-relaxed"
           style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
           {msg.content}
         </div>
@@ -383,8 +386,12 @@ function ChatBubble({ msg, streaming = false }: { msg: ChatMsg; streaming?: bool
         style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
         <Sparkles size={12} className="text-white" />
       </div>
-      <div className={`max-w-[88%] bg-[#1e1f21] border rounded-2xl rounded-tl-sm px-3.5 py-2.5
-        text-[13px] text-zinc-300 leading-relaxed ${streaming ? 'border-indigo-500/30' : 'border-[#2a2b2e]'}`}>
+      <div className="max-w-[88%] rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-[13px] leading-relaxed"
+        style={{
+          background: 'rgba(99,102,241,0.08)',
+          border: streaming ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(99,102,241,0.15)',
+          color: '#c7d2fe',
+        }}>
         {msg.content}
         {streaming && <span className="inline-block w-1 h-3.5 bg-indigo-400 ml-0.5 animate-pulse rounded-sm" />}
       </div>
@@ -396,7 +403,7 @@ function ChatBubble({ msg, streaming = false }: { msg: ChatMsg; streaming?: bool
 function TopNav({ user, showUserMenu, onToggleUserMenu,
   onCloseUserMenu, onLogout, initials, chatOpen, onToggleChat, onOpenAuth }: any) {
   return (
-    <header className="h-14 bg-[#18191c] border-b border-[#2a2b2e] flex items-center justify-between px-5 shrink-0 z-10">
+    <header className="h-14 bg-[#13151f] border-b border-[#252840] flex items-center justify-between px-5 shrink-0 z-10">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
         <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm select-none shadow-lg"
@@ -414,7 +421,7 @@ function TopNav({ user, showUserMenu, onToggleUserMenu,
       {/* Right controls */}
       <div className="flex items-center gap-1.5">
         <Link to="/profile"
-          className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-white/8 rounded-lg transition-colors"
+          className="w-8 h-8 flex items-center justify-center text-indigo-400/50 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
           title="Settings">
           <Settings size={16} />
         </Link>
@@ -423,50 +430,52 @@ function TopNav({ user, showUserMenu, onToggleUserMenu,
           className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
             chatOpen
               ? 'bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/30'
-              : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/8'
+              : 'text-indigo-400/50 hover:text-indigo-300 hover:bg-indigo-500/10'
           }`}
           title="AI Research Assistant">
           <MessageSquare size={16} />
         </button>
 
-        <div className="h-4 w-px bg-white/8 mx-1" />
+        <div className="h-4 w-px bg-indigo-500/15 mx-1" />
 
         {user ? (
           <div className="relative">
             <button onClick={onToggleUserMenu}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-white/8 transition-colors">
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-indigo-500/10 transition-colors">
               <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs select-none text-white"
                 style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
                 {initials}
               </div>
-              <ChevronDown size={12} className="text-zinc-500" />
+              <ChevronDown size={12} className="text-indigo-400/50" />
             </button>
             {showUserMenu && (
-              <div className="absolute right-0 mt-1.5 w-52 bg-[#1e1f21] border border-[#2a2b2e] rounded-xl shadow-2xl z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-[#2a2b2e]">
+              <div className="absolute right-0 mt-1.5 w-52 rounded-xl shadow-2xl z-50 overflow-hidden"
+                style={{ background: '#13151f', border: '1px solid rgba(99,102,241,0.2)' }}>
+                <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
                   <p className="text-sm font-bold text-white">{user.username}</p>
-                  <p className="text-xs text-zinc-500 truncate mt-0.5">{user.email}</p>
+                  <p className="text-xs text-indigo-300/50 truncate mt-0.5">{user.email}</p>
                   {user.is_admin && (
-                    <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded mt-1.5 inline-block border border-amber-400/20">
+                    <span className="text-[10px] font-bold text-amber-400 mt-1.5 inline-block px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }}>
                       Admin
                     </span>
                   )}
                 </div>
                 <Link to="/profile"
-                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-indigo-200/70 hover:bg-indigo-500/10 hover:text-indigo-200 transition-colors"
                   onClick={onCloseUserMenu}>
                   <User size={14} /> Profile & Settings
                 </Link>
                 {user.is_admin && (
                   <Link to="/admin"
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-indigo-200/70 hover:bg-indigo-500/10 hover:text-indigo-200 transition-colors"
                     onClick={onCloseUserMenu}>
                     <ShieldCheck size={14} /> Admin Dashboard
                   </Link>
                 )}
-                <div className="border-t border-[#2a2b2e]" />
+                <div style={{ borderTop: '1px solid rgba(99,102,241,0.12)' }} />
                 <button onClick={onLogout}
-                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors">
                   <LogOut size={14} /> Logout
                 </button>
               </div>
@@ -474,8 +483,8 @@ function TopNav({ user, showUserMenu, onToggleUserMenu,
           </div>
         ) : (
           <button onClick={onOpenAuth}
-            className="flex items-center gap-1.5 text-white px-4 py-1.5 rounded-lg font-semibold text-sm transition-all shadow-lg"
-            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+            className="flex items-center gap-1.5 text-white px-4 py-1.5 rounded-lg font-semibold text-sm transition-all"
+            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 2px 12px rgba(99,102,241,0.4)' }}>
             Sign In
           </button>
         )}
@@ -488,11 +497,15 @@ function TopNav({ user, showUserMenu, onToggleUserMenu,
 function SideNavLink({ to, label, icon, current }: { to: string; label: string; icon: React.ReactNode; current: string }) {
   const active = current === to || (to !== '/' && current.startsWith(to));
   return (
-    <Link to={to} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors
-      ${active
-        ? 'bg-white/10 text-white border border-white/10'
-        : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
-      }`}>
+    <Link to={to} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-all ${
+      active
+        ? 'text-indigo-300'
+        : 'text-indigo-400/40 hover:text-indigo-300 hover:bg-indigo-500/8'
+    }`}
+    style={active ? {
+      background: 'rgba(99,102,241,0.12)',
+      border: '1px solid rgba(99,102,241,0.2)',
+    } : {}}>
       {icon}{label}
     </Link>
   );
@@ -502,16 +515,16 @@ function SideNavLink({ to, label, icon, current }: { to: string; label: string; 
 function EmptyState({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: string }) {
   return (
     <div className="flex flex-col items-center text-center py-10 px-2">
-      <div className="mb-2">{icon}</div>
-      <p className="text-[11px] font-semibold text-zinc-500">{title}</p>
-      <p className="text-[10px] text-zinc-600 mt-1 leading-relaxed">{sub}</p>
+      <div className="mb-2 opacity-30">{icon}</div>
+      <p className="text-[11px] font-semibold text-indigo-300/50">{title}</p>
+      <p className="text-[10px] text-indigo-300/30 mt-1 leading-relaxed">{sub}</p>
     </div>
   );
 }
 function TimelineGroup({ date, children }: { date: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider mb-2">{date}</p>
+      <p className="text-[9px] font-bold text-indigo-400/40 uppercase tracking-wider mb-2">{date}</p>
       <div className="relative">{children}</div>
     </div>
   );
@@ -519,19 +532,23 @@ function TimelineGroup({ date, children }: { date: string; children: React.React
 function TimelineItem({ time, icon, iconBg, title, subtitle, user, isLast }: any) {
   return (
     <div className="relative pl-6 pb-4">
-      {!isLast && <div className="absolute left-[10px] top-5 bottom-0 w-px bg-[#2a2b2e]" />}
-      <div className="absolute left-0 top-1 w-5 h-5 rounded-full bg-[#222325] border border-[#2a2b2e] flex items-center justify-center z-10">
-        <div className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+      {!isLast && <div className="absolute left-[10px] top-5 bottom-0 w-px" style={{ background: 'rgba(99,102,241,0.15)' }} />}
+      <div className="absolute left-0 top-1 w-5 h-5 rounded-full flex items-center justify-center z-10"
+        style={{ background: '#13151f', border: '1px solid rgba(99,102,241,0.2)' }}>
+        <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'rgba(99,102,241,0.5)' }} />
       </div>
-      <div className="bg-[#1e1f21] border border-[#2a2b2e] rounded-lg p-2 hover:bg-[#252628] transition-colors">
+      <div className="rounded-lg p-2 transition-colors"
+        style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.1)' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.05)')}>
         <div className="flex items-center gap-2">
-          <div className={`w-7 h-7 rounded-md ${iconBg} text-white flex items-center justify-center flex-shrink-0`}>{icon}</div>
+          <div className={`w-7 h-7 rounded-md ${iconBg} text-white flex items-center justify-center flex-shrink-0 opacity-80`}>{icon}</div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold text-zinc-200 truncate">{title}</p>
-              <span className="text-[9px] text-zinc-600 ml-1 shrink-0">{time}</span>
+              <p className="text-[11px] font-bold text-indigo-100/80 truncate">{title}</p>
+              <span className="text-[9px] text-indigo-400/40 ml-1 shrink-0">{time}</span>
             </div>
-            <p className="text-[10px] text-zinc-500 truncate">{subtitle}</p>
+            <p className="text-[10px] text-indigo-300/40 truncate">{subtitle}</p>
           </div>
         </div>
       </div>
