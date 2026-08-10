@@ -26,7 +26,7 @@ services:
         sync: false  # set manually to your deployed frontend URL
       - key: RATE_LIMIT_DEFAULT
         value: "60/minute"
-    healthCheckPath: /health
+    healthCheckPath: /ping
 
   - type: web
     name: paperlens-frontend

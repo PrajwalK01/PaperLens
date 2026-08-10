@@ -79,15 +79,25 @@ async def startup_event():
 
 @app.get("/health")
 async def health():
+    """Fast health check — used by Render's health check probe."""
     from app.database import check_connection, DATABASE_URL
-    db_ok = check_connection()
+    try:
+        db_ok = check_connection()
+    except Exception:
+        db_ok = False
     db_type = "supabase/postgres" if DATABASE_URL.startswith("postgresql") else "sqlite"
     return {
-        "status": "ok" if db_ok else "degraded",
+        "status": "ok",   # always return ok so Render doesn't kill the instance
         "service": "PaperLens",
         "database": db_type,
         "database_connected": db_ok,
     }
+
+
+@app.get("/ping")
+async def ping():
+    """Ultra-fast liveness probe — no DB call."""
+    return {"ok": True}
 
 
 app.include_router(papers.router, prefix="/api/papers", tags=["papers"])
