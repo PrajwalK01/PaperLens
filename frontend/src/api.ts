@@ -350,7 +350,7 @@ export function streamChat(
   const controller = new AbortController();
   const token = localStorage.getItem('token');
 
-  fetch(`/api/chat/stream`, {
+  fetch(`${BASE}/api/chat/stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
