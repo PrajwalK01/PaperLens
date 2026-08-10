@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef, createContext, useContext } from 'react';
 import { Outlet, useNavigate, useLocation, Link, useParams } from 'react-router-dom';
 import {
-  Search, Upload, Bell, Moon, Sun, Settings, ChevronDown,
+  Settings, ChevronDown,
   FileText, BookOpen, Bot, CheckCircle, AlertCircle, Clock,
   Loader2, LogOut, User, Home, History, LayoutDashboard,
-  ShieldCheck, X, Send, Paperclip, Sparkles,
+  ShieldCheck, X, Send, Sparkles,
   MessageSquare, Trash2,
 } from 'lucide-react';
 import { getActivity, getToken, logout, getMe, streamChat, type ChatMsg, type ActivityGroup } from '../../api';
@@ -21,15 +21,12 @@ export const AuthContext = createContext<{
   openAuth: () => {}
 });
 export function useAuth() { return useContext(AuthContext); }
-export const SearchContext = createContext<{ query: string; setQuery: (q: string) => void }>({ query: '', setQuery: () => {} });
 
 export default function Layout() {
   const [activityGroups, setActivityGroups] = useState<ActivityGroup[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [dark, setDark] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [chatOpen, setChatOpen] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
@@ -108,16 +105,14 @@ export default function Layout() {
 
   return (
     <AuthContext.Provider value={{ user, refresh: refreshUser, openAuth }}>
-      <SearchContext.Provider value={{ query: searchQuery, setQuery: setSearchQuery }}>
         <div className="flex flex-col h-screen bg-[#f8fafc] font-sans overflow-hidden">
 
           {/* ── Top Nav ───────────────────────────────────────────────── */}
-          <TopNav user={user} dark={dark} onToggleDark={() => setDark(d => !d)}
-            showUserMenu={showUserMenu}
+          <TopNav user={user} showUserMenu={showUserMenu}
             onToggleUserMenu={() => setShowUserMenu(v => !v)}
             onCloseUserMenu={() => setShowUserMenu(false)}
             onLogout={() => { logout(); setUser(null); setActivityGroups([]); navigate('/'); setShowUserMenu(false); }}
-            searchQuery={searchQuery} onSearch={setSearchQuery} initials={initials}
+            initials={initials}
             chatOpen={chatOpen} onToggleChat={() => setChatOpen(v => !v)}
             onOpenAuth={() => openAuth('login')} />
 
@@ -197,7 +192,6 @@ export default function Layout() {
             .custom-scrollbar::-webkit-scrollbar-thumb { background: #2d3559; border-radius: 4px; }
           `}</style>
         </div>
-      </SearchContext.Provider>
     </AuthContext.Provider>
   );
 }
@@ -397,8 +391,8 @@ function ChatBubble({ msg, streaming = false }: { msg: ChatMsg; streaming?: bool
 }
 
 // ── Top Navigation ────────────────────────────────────────────────────────────
-function TopNav({ user, dark, onToggleDark, showUserMenu, onToggleUserMenu,
-  onCloseUserMenu, onLogout, searchQuery, onSearch, initials, chatOpen, onToggleChat, onOpenAuth }: any) {
+function TopNav({ user, showUserMenu, onToggleUserMenu,
+  onCloseUserMenu, onLogout, initials, chatOpen, onToggleChat, onOpenAuth }: any) {
   const navigate = useNavigate();
   return (
     <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-5 shrink-0 z-10">
@@ -409,31 +403,9 @@ function TopNav({ user, dark, onToggleDark, showUserMenu, onToggleUserMenu,
           </div>
           <span className="font-bold text-slate-800 text-lg tracking-tight">PaperLens</span>
         </Link>
-
-        <div className="relative hidden md:block w-72">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-          <input type="text" value={searchQuery} onChange={e => onSearch(e.target.value)}
-            placeholder="Search papers, authors…"
-            className="w-full pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm
-              focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900" />
-          {searchQuery && (
-            <button onClick={() => onSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-              <X size={13} />
-            </button>
-          )}
-        </div>
       </div>
 
       <div className="flex items-center gap-2.5">
-        <button onClick={() => navigate('/')}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-lg font-semibold text-sm transition-colors shadow-sm">
-          <Upload size={14} /> Upload Paper
-        </button>
-        <div className="h-4 w-px bg-slate-200 mx-0.5" />
-        <button className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Notifications"><Bell size={17} /></button>
-        <button onClick={onToggleDark} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Toggle dark mode">
-          {dark ? <Sun size={17} /> : <Moon size={17} />}
-        </button>
         <Link to="/profile" className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Settings">
           <Settings size={17} />
         </Link>
