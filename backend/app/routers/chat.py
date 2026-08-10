@@ -174,17 +174,17 @@ def _build_chat_llm() -> Any:
         except Exception as e:
             logger.warning("Anthropic chat init failed: %s", e)
 
-    # Google gemini-1.5-flash
+    # Google gemini-2.5-flash
     if os.environ.get("GOOGLE_API_KEY", "") not in ("", "your_google_api_key_here"):
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
             llm = ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash-latest",
+                model="gemini-2.5-flash",
                 google_api_key=os.environ["GOOGLE_API_KEY"],
                 max_output_tokens=1500,
                 timeout=45,
             )
-            logger.info("Chat LLM: Google gemini-1.5-flash")
+            logger.info("Chat LLM: Google gemini-2.5-flash")
             return llm
         except Exception as e:
             logger.warning("Google chat init failed: %s", e)

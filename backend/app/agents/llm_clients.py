@@ -7,7 +7,7 @@ callers may also pass an explicit model string to override.
 
 Environment variables:
   AGENT_MODEL_GROUP_A_PRIMARY    default: claude-3-5-sonnet-20241022
-  AGENT_MODEL_GROUP_A_CRITIC     default: gemini-1.5-pro-latest
+  AGENT_MODEL_GROUP_A_CRITIC     default: gemini-2.5-flash
   AGENT_MODEL_GROUP_B_PRIMARY    default: gpt-4o
   AGENT_MODEL_GROUP_B_CRITIC     default: mistral-large-latest
   AGENT_MODEL_SYNTHESIZER        default: claude-3-5-sonnet-20241022
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # ── Default model names ────────────────────────────────────────────────────────
 DEFAULTS = {
     "group_a_primary": os.getenv("AGENT_MODEL_GROUP_A_PRIMARY", "claude-3-5-sonnet-20241022"),
-    "group_a_critic":  os.getenv("AGENT_MODEL_GROUP_A_CRITIC",  "gemini-1.5-pro-latest"),
+    "group_a_critic":  os.getenv("AGENT_MODEL_GROUP_A_CRITIC",  "gemini-2.5-flash"),
     "group_b_primary": os.getenv("AGENT_MODEL_GROUP_B_PRIMARY", "gpt-4o"),
     "group_b_critic":  os.getenv("AGENT_MODEL_GROUP_B_CRITIC",  "mistral-large-latest"),
     "synthesizer":     os.getenv("AGENT_MODEL_SYNTHESIZER",     "claude-3-5-sonnet-20241022"),
@@ -43,7 +43,7 @@ DEFAULTS = {
 # get_model_for_role() behavior (used by run_review) is unchanged so existing
 # code isn't affected.
 FALLBACK_CHAIN = [
-    os.getenv("FALLBACK_MODEL_1", "gemini-1.5-flash"),   # Google AI Studio free tier
+    os.getenv("FALLBACK_MODEL_1", "gemini-2.5-flash"),   # Google AI Studio free tier
     os.getenv("FALLBACK_MODEL_2", "llama-3.3-70b-versatile"),  # Groq free tier (if wired)
     os.getenv("FALLBACK_MODEL_3", "ollama:llama3.1"),    # local, always available if Ollama is running
 ]

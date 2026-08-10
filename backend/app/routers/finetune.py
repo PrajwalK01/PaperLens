@@ -123,10 +123,10 @@ FINETUNE_GUIDE: dict = {
         {
             "id": "group_a_critic",
             "name": "Group A — Critic / Refiner",
-            "default_model": "gemini-1.5-pro-latest",
+            "default_model": "gemini-2.5-flash",
             "role": "critic",
             "fine_tune_priority": "High",
-            "recommended_base": "gemini-1.5-flash (faster + cheaper fine-tuning)",
+            "recommended_base": "gemini-2.5-flash (faster + cheaper fine-tuning)",
             "training_focus": [
                 "Identifying hallucinations in the primary review (cite exact paper line that contradicts the claim).",
                 "Adjusting scores that are too generous: real accept rates at top venues are 20-25%.",
@@ -314,7 +314,7 @@ FINETUNE_GUIDE: dict = {
         "description": "Set these in backend/.env to switch any agent to a fine-tuned model without code changes.",
         "vars": [
             {"key": "AGENT_MODEL_GROUP_A_PRIMARY", "default": "claude-3-5-sonnet-20241022", "description": "Primary reviewer for Group A"},
-            {"key": "AGENT_MODEL_GROUP_A_CRITIC",  "default": "gemini-1.5-pro-latest",      "description": "Critic/refiner for Group A"},
+            {"key": "AGENT_MODEL_GROUP_A_CRITIC",  "default": "gemini-2.5-flash",      "description": "Critic/refiner for Group A"},
             {"key": "AGENT_MODEL_GROUP_B_PRIMARY", "default": "gpt-4o",                     "description": "Primary reviewer for Group B"},
             {"key": "AGENT_MODEL_GROUP_B_CRITIC",  "default": "mistral-large-latest",       "description": "Critic/refiner for Group B"},
             {"key": "AGENT_MODEL_SYNTHESIZER",     "default": "claude-3-5-sonnet-20241022", "description": "Final synthesizer/judge"},
