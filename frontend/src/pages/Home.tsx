@@ -45,45 +45,38 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-full pb-10">
+    <div className="min-h-full pb-8">
 
-      {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <div className="text-center pt-10 pb-8">
-        {/* Glowing icon */}
-        <div className="relative inline-flex mb-5">
-          <div className="absolute inset-0 rounded-2xl blur-xl opacity-60"
+      {/* ── Hero ── */}
+      <div className="text-center pt-6 pb-4">
+        <div className="relative inline-flex mb-3">
+          <div className="absolute inset-0 rounded-xl blur-lg opacity-50"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }} />
-          <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl"
+          <div className="relative w-11 h-11 rounded-xl flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-            <FileText className="w-8 h-8 text-white" />
+            <FileText className="w-5 h-5 text-white" />
           </div>
         </div>
 
-        <h1 className="text-4xl font-black text-white tracking-tight mb-2"
-          style={{ letterSpacing: '-0.03em' }}>
+        <h1 className="text-2xl font-black text-white mb-1.5" style={{ letterSpacing: '-0.03em' }}>
           AI Peer Review,{' '}
-          <span style={{
-            background: 'linear-gradient(90deg, #818cf8, #a78bfa, #c084fc)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
+          <span style={{ background: 'linear-gradient(90deg,#818cf8,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Instantly
           </span>
         </h1>
-        <p className="text-zinc-400 text-sm max-w-xs mx-auto leading-relaxed">
+        <p className="text-xs text-indigo-300/50 max-w-xs mx-auto leading-relaxed">
           5 independent AI agents review your paper in parallel and deliver a structured verdict in minutes.
         </p>
 
-        {/* Feature pills */}
-        <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+        <div className="flex items-center justify-center gap-1.5 mt-3 flex-wrap">
           {[
-            { icon: <Brain className="w-3 h-3" />, label: '5 LLM Agents' },
-            { icon: <Zap className="w-3 h-3" />,   label: 'Parallel Review' },
-            { icon: <Shield className="w-3 h-3" />, label: 'Integrity Check' },
-            { icon: <Sparkles className="w-3 h-3" />, label: 'RAG Retrieval' },
+            { icon: <Brain className="w-2.5 h-2.5" />, label: '5 LLM Agents' },
+            { icon: <Zap className="w-2.5 h-2.5" />,   label: 'Parallel Review' },
+            { icon: <Shield className="w-2.5 h-2.5" />, label: 'Integrity Check' },
+            { icon: <Sparkles className="w-2.5 h-2.5" />, label: 'RAG Retrieval' },
           ].map(p => (
             <span key={p.label}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold text-indigo-300 border"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-indigo-300 border"
               style={{ background: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.25)' }}>
               {p.icon}{p.label}
             </span>
@@ -91,27 +84,17 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Upload card ────────────────────────────────────────────────── */}
+      {/* ── Upload card ── */}
       <div className="max-w-lg mx-auto">
-        <div className="rounded-2xl border p-6"
-          style={{ background: 'rgba(99,102,241,0.04)', borderColor: 'rgba(99,102,241,0.18)', backdropFilter: 'blur(8px)' }}>
+        <div className="rounded-2xl border p-4"
+          style={{ background: 'rgba(99,102,241,0.04)', borderColor: 'rgba(99,102,241,0.18)' }}>
 
           {/* Mode toggle */}
-          <div className="flex gap-1 mb-5 p-1 rounded-xl"
-            style={{ background: 'rgba(99,102,241,0.08)' }}>
-            {([
-              ['pdf',   '📄', 'Upload PDF'],
-              ['arxiv', '#',  'arXiv ID'],
-            ] as const).map(([m, ico, lbl]) => (
+          <div className="flex gap-1 mb-3 p-1 rounded-lg" style={{ background: 'rgba(99,102,241,0.08)' }}>
+            {([['pdf','📄','Upload PDF'],['arxiv','#','arXiv ID']] as const).map(([m, ico, lbl]) => (
               <button key={m} onClick={() => { setMode(m); setError(null) }}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                  mode === m
-                    ? 'text-white shadow-sm'
-                    : 'text-zinc-600 hover:text-zinc-300'
-                }`}
-                style={mode === m ? {
-                  background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-                } : {}}>
+                className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition-all ${mode === m ? 'text-white' : 'text-indigo-400/50 hover:text-indigo-300'}`}
+                style={mode === m ? { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' } : {}}>
                 {ico} {lbl}
               </button>
             ))}
@@ -120,47 +103,39 @@ export default function Home() {
           {/* PDF drop zone */}
           {mode === 'pdf' && (
             <div {...getRootProps()}
-              className="mb-4 rounded-xl p-7 text-center cursor-default transition-all border-2 border-dashed"
+              className="mb-3 rounded-xl p-5 text-center cursor-default transition-all border-2 border-dashed"
               style={{
-                borderColor: isDragActive ? '#6366f1' : dropped ? '#10b981' : 'rgba(99,102,241,0.25)',
-                background: isDragActive
-                  ? 'rgba(99,102,241,0.1)'
-                  : dropped
-                  ? 'rgba(16,185,129,0.07)'
-                  : 'rgba(99,102,241,0.04)',
+                borderColor: isDragActive ? '#6366f1' : dropped ? '#10b981' : 'rgba(99,102,241,0.22)',
+                background: isDragActive ? 'rgba(99,102,241,0.1)' : dropped ? 'rgba(16,185,129,0.06)' : 'rgba(99,102,241,0.03)',
               }}>
               <input {...getInputProps()} />
               {dropped ? (
                 <div className="animate-fade-in">
-                  <div className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
+                  <div className="w-9 h-9 rounded-lg mx-auto mb-2 flex items-center justify-center"
                     style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)' }}>
-                    <FileText className="w-6 h-6 text-emerald-400" />
+                    <FileText className="w-4 h-4 text-emerald-400" />
                   </div>
-                  <p className="font-bold text-white text-sm">{dropped.name}</p>
-                  <p className="text-zinc-500 text-xs mt-1">
-                    {(dropped.size / 1024 / 1024).toFixed(2)} MB · Ready to review
-                  </p>
+                  <p className="font-bold text-white text-xs">{dropped.name}</p>
+                  <p className="text-indigo-300/40 text-[10px] mt-0.5">{(dropped.size/1024/1024).toFixed(2)} MB · Ready to review</p>
                   <button onClick={e => { e.stopPropagation(); setDropped(null) }}
-                    className="mt-3 inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-red-400 transition-colors">
-                    <X className="w-3 h-3" /> Remove file
+                    className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-indigo-400/40 hover:text-red-400 transition-colors">
+                    <X className="w-2.5 h-2.5" /> Remove file
                   </button>
                 </div>
               ) : (
                 <div>
-                  <div className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
+                  <div className="w-9 h-9 rounded-lg mx-auto mb-2 flex items-center justify-center"
                     style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
-                    <Upload className="w-6 h-6 text-indigo-400" />
+                    <Upload className="w-4 h-4 text-indigo-400" />
                   </div>
-                  <p className="text-sm font-semibold text-zinc-200">
-                    {isDragActive ? 'Drop it here…' : 'Drag & drop a PDF here'}
-                  </p>
-                  <p className="text-xs text-zinc-600 mt-1 mb-3">or</p>
+                  <p className="text-xs font-semibold text-indigo-100/70">{isDragActive ? 'Drop it here…' : 'Drag & drop a PDF here'}</p>
+                  <p className="text-[10px] text-indigo-400/30 mt-1 mb-2">or</p>
                   <button onClick={open}
-                    className="px-4 py-1.5 rounded-lg text-sm font-semibold text-indigo-300 border transition-colors hover:text-white"
-                    style={{ borderColor: 'rgba(99,102,241,0.4)', background: 'rgba(99,102,241,0.1)' }}>
+                    className="px-3 py-1 rounded-md text-[11px] font-semibold text-indigo-300 border transition-colors hover:text-white"
+                    style={{ borderColor: 'rgba(99,102,241,0.35)', background: 'rgba(99,102,241,0.1)' }}>
                     Browse files
                   </button>
-                  <p className="text-xs text-zinc-700 mt-3">PDF up to 50 MB</p>
+                  <p className="text-[10px] text-indigo-400/25 mt-2">PDF up to 50 MB</p>
                 </div>
               )}
             </div>
@@ -168,19 +143,16 @@ export default function Home() {
 
           {/* arXiv input */}
           {mode === 'arxiv' && (
-            <div className="mb-4 relative">
-              <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400/50" />
+            <div className="mb-3 relative">
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-indigo-400/40" />
               <input
                 value={arxivId}
                 onChange={e => { setArxivId(e.target.value); setError(null) }}
                 placeholder="e.g. 2301.00001 or arxiv.org/abs/2301.00001"
                 onKeyDown={e => e.key === 'Enter' && canSubmit && submit()}
-                className="w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none transition-all text-indigo-100 placeholder:text-indigo-400/30"
-                style={{
-                  background: 'rgba(99,102,241,0.07)',
-                  border: '1px solid rgba(99,102,241,0.2)',
-                }}
-                onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.6)'}
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl text-xs focus:outline-none transition-all text-indigo-100 placeholder:text-indigo-400/30"
+                style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)' }}
+                onFocus={e => e.target.style.borderColor = 'rgba(99,102,241,0.55)'}
                 onBlur={e => e.target.style.borderColor = 'rgba(99,102,241,0.2)'}
               />
             </div>
@@ -188,92 +160,72 @@ export default function Home() {
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2.5 rounded-xl px-4 py-3 mb-4 animate-slide-down"
-              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-400">{error}</p>
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2 mb-3 animate-slide-down"
+              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.22)' }}>
+              <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+              <p className="text-xs text-red-400">{error}</p>
             </div>
           )}
 
           {/* Submit */}
           <button onClick={submit} disabled={!canSubmit}
-            className="w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
+            className="w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all"
             style={canSubmit ? {
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
               color: 'white',
-              boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
+              boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
             } : {
-              background: 'rgba(255,255,255,0.05)',
-              color: '#3f3f46',
+              background: 'rgba(99,102,241,0.08)',
+              color: 'rgba(99,102,241,0.3)',
               cursor: 'not-allowed',
             }}>
-            {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" />{loadingMsg || 'Processing…'}</>
-            ) : (
-              <><span>Start AI Review</span><ArrowRight className="w-4 h-4" /></>
-            )}
+            {loading
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />{loadingMsg || 'Processing…'}</>
+              : <><span>Start AI Review</span><ArrowRight className="w-3.5 h-3.5" /></>
+            }
           </button>
         </div>
 
-        {/* ── Pipeline diagram ──────────────────────────────────────────── */}
-        <div className="mt-4 rounded-2xl p-5"
-          style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.15)' }}>
-          <p className="text-[10px] font-black text-indigo-400/40 uppercase tracking-widest mb-4 text-center">
+        {/* ── Pipeline diagram ── */}
+        <div className="mt-3 rounded-2xl p-4"
+          style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.12)' }}>
+          <p className="text-[9px] font-black text-indigo-400/35 uppercase tracking-widest mb-3 text-center">
             5-Agent Review Pipeline
           </p>
 
-          {/* Two parallel groups */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-2 gap-2 mb-2">
             {[
-              {
-                label: 'Group A',
-                color: 'rgba(99,102,241,0.12)',
-                border: 'rgba(99,102,241,0.25)',
-                text: '#818cf8',
-                agents: ['Primary Reviewer', 'Critic Agent'],
-              },
-              {
-                label: 'Group B',
-                color: 'rgba(139,92,246,0.12)',
-                border: 'rgba(139,92,246,0.25)',
-                text: '#a78bfa',
-                agents: ['Primary Reviewer', 'Critic Agent'],
-              },
+              { label: 'Group A', color: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.22)', text: '#818cf8', agents: ['Primary Reviewer','Critic Agent'] },
+              { label: 'Group B', color: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.22)', text: '#a78bfa', agents: ['Primary Reviewer','Critic Agent'] },
             ].map(g => (
-              <div key={g.label} className="rounded-xl p-3"
+              <div key={g.label} className="rounded-lg p-2.5"
                 style={{ background: g.color, border: `1px solid ${g.border}` }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-2"
-                  style={{ color: g.text }}>{g.label}</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: g.text }}>{g.label}</p>
                 {g.agents.map((a, i) => (
-                  <div key={a} className="flex items-center gap-1.5 mb-1 last:mb-0">
-                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{ background: g.text, opacity: i === 0 ? 1 : 0.5 }} />
-                    <p className="text-[11px] font-medium text-zinc-400">{a}</p>
+                  <div key={a} className="flex items-center gap-1 mb-0.5 last:mb-0">
+                    <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: g.text, opacity: i === 0 ? 1 : 0.45 }} />
+                    <p className="text-[10px] text-indigo-200/50">{a}</p>
                   </div>
                 ))}
               </div>
             ))}
           </div>
 
-          {/* Synthesizer */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.2)' }} />
-            <span className="text-[10px] text-indigo-400/40">converge</span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.2)' }} />
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.15)' }} />
+            <span className="text-[9px] text-indigo-400/30">converge</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.15)' }} />
           </div>
-          <div className="rounded-xl p-3 text-center"
-            style={{
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.12))',
-              border: '1px solid rgba(139,92,246,0.3)',
-            }}>
+
+          <div className="rounded-lg p-2.5 text-center"
+            style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1))', border: '1px solid rgba(139,92,246,0.25)' }}>
             <div className="flex items-center justify-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-              <p className="text-[11px] font-bold text-violet-300">Synthesizer Agent</p>
+              <Sparkles className="w-3 h-3 text-violet-400" />
+              <p className="text-[10px] font-bold text-violet-300">Synthesizer Agent</p>
             </div>
-            <p className="text-[10px] text-indigo-300/40 mt-1">Final verdict · Score /10 · Confidence · Recommendation</p>
+            <p className="text-[9px] text-indigo-300/35 mt-0.5">Final verdict · Score /10 · Confidence · Recommendation</p>
           </div>
         </div>
-
       </div>
     </div>
   )
