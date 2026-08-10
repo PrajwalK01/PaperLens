@@ -37,13 +37,18 @@ _allowed_origins = [
     "http://localhost:3000",      # Alternative frontend port
     "http://frontend:5173",       # Docker service name
     "http://127.0.0.1:5173",      # Localhost alternative
+    "https://paper-lens-liart.vercel.app",  # Vercel production
 ]
-if os.getenv("FRONTEND_URL"):
-    _allowed_origins.append(os.getenv("FRONTEND_URL"))
+# Additional origins from env (FRONTEND_URL can be space-separated list)
+_frontend_url = os.getenv("FRONTEND_URL", "")
+for _url in _frontend_url.split():
+    if _url and _url not in _allowed_origins:
+        _allowed_origins.append(_url)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # all Vercel preview deployments
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
