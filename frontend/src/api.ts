@@ -1,10 +1,23 @@
 /**
  * Typed API client for PaperLens backend.
- * Uses VITE_API_BASE environment variable (set in docker-compose.yml or .env)
+ * Uses VITE_API_BASE environment variable.
+ * In production (Vercel), set VITE_API_BASE to your Render backend URL.
+ * Example: https://your-service.onrender.com
  */
 import axios from 'axios';
 
+// Detect if we're running on Vercel (production) with no backend configured
 const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+
+// Warn in console if running in production without API base set
+if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !import.meta.env.VITE_API_BASE) {
+  console.error(
+    '[PaperLens] VITE_API_BASE is not set.\n' +
+    'Go to Vercel → Project Settings → Environment Variables\n' +
+    'Add: VITE_API_BASE = https://your-render-url.onrender.com\n' +
+    'Then redeploy.'
+  );
+}
 
 const api = axios.create({ baseURL: BASE });
 
