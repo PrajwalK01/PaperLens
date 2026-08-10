@@ -262,6 +262,7 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
     ? ['Summarise this paper', 'Explain the methodology', 'What are the key weaknesses?', 'Find related work']
     : ['What makes a good paper?', 'Explain peer review', 'How does LangGraph work?'];
 
+  return (
     <aside className="w-[320px] bg-[#13151f] border-l border-[#252840] flex flex-col shrink-0">
 
       {/* Header */}
