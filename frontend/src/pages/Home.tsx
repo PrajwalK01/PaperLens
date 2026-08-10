@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Hash, Loader2, AlertCircle, ArrowRight, Upload, X, FileText, Sparkles, Zap, Shield, Brain } from 'lucide-react'
+import { Hash, Loader2, AlertCircle, ArrowRight, Upload, X, FileText, Zap, Shield, Brain } from 'lucide-react'
 import { uploadPdf, fetchArxiv, startReview, type Paper } from '../api'
 
 export default function Home() {
@@ -186,46 +186,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* ── Pipeline diagram ── */}
-        <div className="mt-3 rounded-2xl p-4"
-          style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.12)' }}>
-          <p className="text-[9px] font-black text-indigo-400/35 uppercase tracking-widest mb-3 text-center">
-            5-Agent Review Pipeline
-          </p>
-
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            {[
-              { label: 'Group A', color: 'rgba(99,102,241,0.1)', border: 'rgba(99,102,241,0.22)', text: '#818cf8', agents: ['Primary Reviewer','Critic Agent'] },
-              { label: 'Group B', color: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.22)', text: '#a78bfa', agents: ['Primary Reviewer','Critic Agent'] },
-            ].map(g => (
-              <div key={g.label} className="rounded-lg p-2.5"
-                style={{ background: g.color, border: `1px solid ${g.border}` }}>
-                <p className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: g.text }}>{g.label}</p>
-                {g.agents.map((a, i) => (
-                  <div key={a} className="flex items-center gap-1 mb-0.5 last:mb-0">
-                    <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: g.text, opacity: i === 0 ? 1 : 0.45 }} />
-                    <p className="text-[10px] text-indigo-200/50">{a}</p>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.15)' }} />
-            <span className="text-[9px] text-indigo-400/30">converge</span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.15)' }} />
-          </div>
-
-          <div className="rounded-lg p-2.5 text-center"
-            style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1))', border: '1px solid rgba(139,92,246,0.25)' }}>
-            <div className="flex items-center justify-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-violet-400" />
-              <p className="text-[10px] font-bold text-violet-300">Synthesizer Agent</p>
-            </div>
-            <p className="text-[9px] text-indigo-300/35 mt-0.5">Final verdict · Score /10 · Confidence · Recommendation</p>
-          </div>
-        </div>
       </div>
     </div>
   )
