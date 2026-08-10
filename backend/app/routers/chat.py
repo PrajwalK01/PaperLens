@@ -6,12 +6,14 @@ POST /api/chat         — non-streaming fallback (single JSON response).
 
 The assistant is aware of:
   - The paper's title, authors, abstract and full text (if paper_id provided)
+  - Relevant chunks retrieved via RAG from Chroma (beats truncated full text)
   - The final review verdict (if a completed review job exists for that paper)
   - Conversation history sent by the client (last N messages)
 """
 import json
 import logging
 import os
+import threading
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -25,8 +27,12 @@ from app.models import Paper, ReviewJob
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
+# ── LLM client cache — build once per process, reuse across requests ──────────
+_chat_llm_cache: Optional[Any] = None
+_chat_llm_lock = threading.Lock()
 
-# ── Request / response schemas ─────────────────────────────────────────────────
+
+# ── Request schemas ────────────────────────────────────────────────────────────
 
 class ChatMessage(BaseModel):
     role: str   # "user" | "assistant"
@@ -39,9 +45,35 @@ class ChatRequest(BaseModel):
     history: List[ChatMessage] = []
 
 
+# ── RAG retrieval for chat ─────────────────────────────────────────────────────
+
+def _retrieve_for_chat(paper_id: str, query: str, k: int = 5) -> str:
+    """
+    Retrieve the most relevant chunks from Chroma for the given query.
+    Falls back to empty string if retrieval fails.
+    """
+    try:
+        from app.utils import chunking
+        results = chunking.retrieve(paper_id=paper_id, query=query, k=k)
+        if not results:
+            return ""
+        chunks = []
+        for r in results:
+            section = r.get("section", "")
+            text = r.get("text", "")
+            if section:
+                chunks.append(f"[{section}]\n{text}")
+            else:
+                chunks.append(text)
+        return "\n\n---\n\n".join(chunks)
+    except Exception as e:
+        logger.warning("RAG retrieval for chat failed: %s", e)
+        return ""
+
+
 # ── System prompt builder ──────────────────────────────────────────────────────
 
-def _build_system(paper: Optional[Paper], job: Optional[ReviewJob]) -> str:
+def _build_system(paper: Optional[Paper], job: Optional[ReviewJob], rag_context: str = "") -> str:
     parts = [
         "You are PaperLens Research Assistant — a knowledgeable AI helping researchers "
         "understand and analyse scientific papers. You are concise, precise, and always "
@@ -57,17 +89,22 @@ def _build_system(paper: Optional[Paper], job: Optional[ReviewJob]) -> str:
             parts.append(f"Field: {paper.research_field}")
         if paper.abstract:
             parts.append(f"\nAbstract:\n{paper.abstract}")
-        if paper.content:
-            # Limit to 12 000 chars to leave room for the conversation
-            excerpt = paper.content[:12_000]
-            if len(paper.content) > 12_000:
-                excerpt += "\n\n[...paper truncated for context window...]"
+
+        # Use RAG-retrieved content if available; fall back to truncated full text
+        if rag_context:
+            parts.append(
+                f"\n## Relevant Paper Excerpts (retrieved for this query):\n{rag_context}"
+            )
+        elif paper.content:
+            excerpt = paper.content[:10_000]
+            if len(paper.content) > 10_000:
+                excerpt += "\n\n[...paper truncated...]"
             parts.append(f"\nFull Paper Text (excerpt):\n{excerpt}")
 
     if job and job.final_review:
         fr = job.final_review
         parts.append(
-            f"\n## AI Review Verdict (already completed)\n"
+            f"\n## AI Review Verdict (completed)\n"
             f"Recommendation: {fr.get('final_recommendation', 'N/A')}\n"
             f"Overall Score: {fr.get('final_scores', {}).get('overall', 'N/A')}/10\n"
             f"Confidence: {fr.get('confidence', 'N/A')}\n"
@@ -75,88 +112,120 @@ def _build_system(paper: Optional[Paper], job: Optional[ReviewJob]) -> str:
         )
 
     parts.append(
-        "\nAnswer the user's question about this paper clearly and helpfully. "
+        "\nAnswer the user's question clearly and helpfully. "
         "If asked to summarise, explain equations, suggest related work, or critique methodology, do so. "
-        "If a question cannot be answered from the paper content, say so honestly."
+        "If a question cannot be answered from the available content, say so honestly. "
+        "Keep responses concise and well-structured — use bullet points or numbered lists for clarity."
     )
     return "\n".join(parts)
 
 
-# ── LLM caller — picks the cheapest/fastest available provider ─────────────────
+# ── LLM caller — cached, picks cheapest/fastest available provider ─────────────
 
-def _get_chat_llm():
+def _get_chat_llm() -> Any:
     """
-    Return a LangChain chat model for the assistant.
-    Priority: Anthropic Claude > Google Gemini > Mistral > OpenAI GPT-4o-mini
-    (OpenAI is last because quota errors are common with free-tier keys)
+    Return a cached LangChain chat model. Built once per process, reused for all requests.
+    Priority: Anthropic Haiku (fast) → Groq (very fast) → Gemini Flash → Mistral → OpenAI mini
     """
-    # Try Anthropic claude-3-haiku (fast + reliable)
+    global _chat_llm_cache
+    if _chat_llm_cache is not None:
+        return _chat_llm_cache
+
+    with _chat_llm_lock:
+        # Double-checked locking
+        if _chat_llm_cache is not None:
+            return _chat_llm_cache
+
+        llm = _build_chat_llm()
+        _chat_llm_cache = llm
+        return llm
+
+
+def _build_chat_llm() -> Any:
+    """Build and return the best available LLM for chat."""
+
+    # Groq is fastest for chat (very low latency)
+    if os.environ.get("GROQ_API_KEY", "") not in ("", "your_groq_api_key_here"):
+        try:
+            from langchain_groq import ChatGroq
+            llm = ChatGroq(
+                model="llama-3.1-8b-instant",
+                api_key=os.environ["GROQ_API_KEY"],
+                max_tokens=1500,
+                temperature=0.4,
+            )
+            logger.info("Chat LLM: Groq llama-3.1-8b-instant")
+            return llm
+        except Exception as e:
+            logger.warning("Groq chat init failed: %s", e)
+
+    # Anthropic claude-3-haiku (fast + smart)
     if os.environ.get("ANTHROPIC_API_KEY", "") not in ("", "your_anthropic_api_key_here"):
         try:
             from langchain_anthropic import ChatAnthropic
-            return ChatAnthropic(
+            llm = ChatAnthropic(
                 model="claude-3-haiku-20240307",
                 api_key=os.environ["ANTHROPIC_API_KEY"],
-                max_tokens=1024,
-                timeout=60,
+                max_tokens=1500,
+                timeout=45,
             )
+            logger.info("Chat LLM: Anthropic claude-3-haiku")
+            return llm
         except Exception as e:
-            logger.warning("Anthropic init failed: %s", e)
+            logger.warning("Anthropic chat init failed: %s", e)
 
-    # Try Google gemini-1.5-flash
+    # Google gemini-1.5-flash
     if os.environ.get("GOOGLE_API_KEY", "") not in ("", "your_google_api_key_here"):
         try:
             from langchain_google_genai import ChatGoogleGenerativeAI
-            return ChatGoogleGenerativeAI(
+            llm = ChatGoogleGenerativeAI(
                 model="gemini-1.5-flash-latest",
                 google_api_key=os.environ["GOOGLE_API_KEY"],
-                max_output_tokens=1024,
-                timeout=60,
+                max_output_tokens=1500,
+                timeout=45,
             )
+            logger.info("Chat LLM: Google gemini-1.5-flash")
+            return llm
         except Exception as e:
-            logger.warning("Google init failed: %s", e)
+            logger.warning("Google chat init failed: %s", e)
 
-    # Try Mistral
+    # Mistral small
     if os.environ.get("MISTRAL_API_KEY", "") not in ("", "your_mistral_api_key_here"):
         try:
             from langchain_mistralai import ChatMistralAI
-            return ChatMistralAI(
+            llm = ChatMistralAI(
                 model="mistral-small-latest",
                 api_key=os.environ["MISTRAL_API_KEY"],
-                max_tokens=1024,
-                timeout=60,
+                max_tokens=1500,
+                timeout=45,
             )
+            logger.info("Chat LLM: Mistral small")
+            return llm
         except Exception as e:
-            logger.warning("Mistral init failed: %s", e)
+            logger.warning("Mistral chat init failed: %s", e)
 
-    # Try local Ollama if configured
-    ollama_model = os.environ.get("OLLAMA_MODEL") or os.environ.get("AGENT_MODEL_GROUP_A_PRIMARY")
-    if ollama_model and (ollama_model.startswith("ollama:") or "llama3" in ollama_model):
+    # OpenAI as last resort
+    if os.environ.get("OPENAI_API_KEY", "") not in ("", "your_openai_api_key_here"):
         try:
-            import ollama
-            from langchain_core.messages import SystemMessage, HumanMessage
-            class OllamaChatClient:
-                def __init__(self, model, base_url):
-                    self.model = model
-                    self.base_url = base_url
-
-                async def astream(self, messages):
-                    client = ollama.Client(host=self.base_url)
-                    ollama_messages = []
-                    for m in messages:
-                        role = "system" if m.__class__.__name__ == "SystemMessage" else "user"
-                        ollama_messages.append({"role": role, "content": m.content})
-                    response = client.chat(model=self.model.replace("ollama:", ""), messages=ollama_messages)
-                    text = response["message"]["content"]
-                    yield type("x", (), {"content": text})
-
-            return OllamaChatClient(model=ollama_model.replace("ollama:", ""), base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
+            from langchain_openai import ChatOpenAI
+            llm = ChatOpenAI(
+                model="gpt-4o-mini",
+                api_key=os.environ["OPENAI_API_KEY"],
+                max_tokens=1500,
+                timeout=45,
+            )
+            logger.info("Chat LLM: OpenAI gpt-4o-mini")
+            return llm
         except Exception as e:
-            logger.warning("Ollama init failed: %s", e)
+            logger.warning("OpenAI chat init failed: %s", e)
 
     raise HTTPException(
         status_code=503,
-        detail="No working LLM API key found. Add ANTHROPIC_API_KEY, GOOGLE_API_KEY, MISTRAL_API_KEY, OPENAI_API_KEY, or configure OLLAMA_MODEL and OLLAMA_BASE_URL"
+        detail=(
+            "No working LLM API key found. "
+            "Add GROQ_API_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY, MISTRAL_API_KEY, "
+            "or OPENAI_API_KEY to backend/.env and restart the server."
+        )
     )
 
 
@@ -166,9 +235,8 @@ def _get_chat_llm():
 async def chat_stream(body: ChatRequest, db: Session = Depends(get_db)):
     """
     Stream AI assistant response as Server-Sent Events.
-    Frontend receives: data: <chunk>\n\n   and   data: [DONE]\n\n
+    Uses RAG to retrieve relevant paper sections for better context quality.
     """
-    # Resolve paper and job from DB
     paper: Optional[Paper] = None
     job: Optional[ReviewJob] = None
 
@@ -178,7 +246,6 @@ async def chat_stream(body: ChatRequest, db: Session = Depends(get_db)):
     if body.job_id:
         job = db.query(ReviewJob).filter(ReviewJob.id == body.job_id).first()
     elif paper:
-        # Auto-pick the latest completed review job for this paper
         job = (
             db.query(ReviewJob)
             .filter(ReviewJob.paper_id == paper.id, ReviewJob.status == "completed")
@@ -186,12 +253,16 @@ async def chat_stream(body: ChatRequest, db: Session = Depends(get_db)):
             .first()
         )
 
-    system_text = _build_system(paper, job)
+    # RAG: retrieve relevant content for this specific question
+    rag_context = ""
+    if paper and body.message:
+        rag_context = _retrieve_for_chat(paper.id, body.message, k=5)
+
+    system_text = _build_system(paper, job, rag_context)
 
     try:
         llm = _get_chat_llm()
     except HTTPException as exc:
-        # Return error as SSE so frontend can display it
         async def error_gen():
             yield f"data: {json.dumps({'error': exc.detail})}\n\n"
             yield "data: [DONE]\n\n"
@@ -200,7 +271,6 @@ async def chat_stream(body: ChatRequest, db: Session = Depends(get_db)):
     from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
     messages = [SystemMessage(content=system_text)]
-    # Add history (cap at last 10 turns to stay within context)
     for msg in body.history[-10:]:
         if msg.role == "user":
             messages.append(HumanMessage(content=msg.content))
@@ -216,6 +286,9 @@ async def chat_stream(body: ChatRequest, db: Session = Depends(get_db)):
                     yield f"data: {json.dumps({'token': text})}\n\n"
         except Exception as exc:
             logger.error("Chat stream error: %s", exc)
+            # Clear cache so next request tries fresh init
+            global _chat_llm_cache
+            _chat_llm_cache = None
             yield f"data: {json.dumps({'error': str(exc)})}\n\n"
         finally:
             yield "data: [DONE]\n\n"
@@ -225,7 +298,8 @@ async def chat_stream(body: ChatRequest, db: Session = Depends(get_db)):
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",   # disable nginx buffering
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
         },
     )
 
@@ -250,7 +324,11 @@ async def chat_sync(body: ChatRequest, db: Session = Depends(get_db)):
             .first()
         )
 
-    system_text = _build_system(paper, job)
+    rag_context = ""
+    if paper and body.message:
+        rag_context = _retrieve_for_chat(paper.id, body.message, k=5)
+
+    system_text = _build_system(paper, job, rag_context)
     llm = _get_chat_llm()
 
     from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
@@ -266,4 +344,6 @@ async def chat_sync(body: ChatRequest, db: Session = Depends(get_db)):
         resp = llm.invoke(messages)
         return {"response": resp.content}
     except Exception as exc:
+        global _chat_llm_cache
+        _chat_llm_cache = None
         raise HTTPException(status_code=500, detail=str(exc))

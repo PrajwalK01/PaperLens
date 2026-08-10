@@ -61,8 +61,8 @@ from app.utils import cost_tracker
 
 logger = logging.getLogger(__name__)
 
-MAX_RETRIES = 2
-RETRY_DELAY = 3  # seconds
+MAX_RETRIES = 1         # reduced from 2 — fail fast, don't wait on flaky providers
+RETRY_DELAY = 1         # reduced from 3 — quick retry, not a long sleep
 
 AGENTIC_RAG_ENABLED = os.getenv("AGENTIC_RAG_ENABLED", "true").lower() == "true"
 INDEPENDENT_AGENTS_MODE = os.getenv("INDEPENDENT_AGENTS_MODE", "false").lower() == "true"

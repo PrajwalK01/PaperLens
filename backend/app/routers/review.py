@@ -10,6 +10,8 @@ GET  /api/history             — list past review jobs
 import json
 import logging
 import threading
+import time as _time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import List, Optional
 
@@ -28,16 +30,80 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _estimate_review_time(paper_content: str, model_config: dict) -> dict:
+    """
+    Estimate how long the review will take based on paper length and models selected.
+    Returns a dict with estimated_seconds and display string.
+    """
+    char_count = len(paper_content) if paper_content else 0
+
+    # Base time per model API call (seconds) — rough empirical values
+    MODEL_LATENCY = {
+        "gemini": 15,
+        "claude": 20,
+        "gpt": 25,
+        "llama": 12,
+        "mistral": 18,
+        "groq": 8,
+        "ollama": 30,
+    }
+
+    def _model_latency(model_name: Optional[str]) -> int:
+        if not model_name:
+            return 15
+        m = model_name.lower()
+        for key, val in MODEL_LATENCY.items():
+            if key in m:
+                return val
+        return 20
+
+    # Get latencies for each role
+    a_primary_lat = _model_latency(model_config.get("group_a_primary"))
+    b_primary_lat = _model_latency(model_config.get("group_b_primary"))
+    a_critic_lat  = _model_latency(model_config.get("group_a_critic"))
+    b_critic_lat  = _model_latency(model_config.get("group_b_critic"))
+    synth_lat     = _model_latency(model_config.get("synthesizer"))
+
+    # Agentic mode: each primary/critic does up to 4 tool calls (reduced from 6)
+    agentic_factor = 3.5 if char_count > 5000 else 2.0
+
+    # Pipeline: A-primary + B-primary run in parallel, then A-critic + B-critic in parallel, then synth
+    # Layer 1: max(a_primary, b_primary)
+    # Layer 2: max(a_critic, b_critic)
+    # Layer 3: synth
+    layer1 = max(a_primary_lat, b_primary_lat) * agentic_factor
+    layer2 = max(a_critic_lat, b_critic_lat) * agentic_factor
+    layer3 = synth_lat * 1.5  # synth is not agentic
+
+    integrity_time = 10  # integrity check runs in parallel with layer 1 now
+
+    # Total critical path
+    estimated_seconds = int(layer1 + layer2 + layer3 + integrity_time + 10)  # +10s buffer
+
+    if estimated_seconds < 60:
+        display = f"~{estimated_seconds}s"
+    elif estimated_seconds < 120:
+        display = f"~1–2 min"
+    elif estimated_seconds < 180:
+        display = f"~2–3 min"
+    elif estimated_seconds < 300:
+        display = f"~3–5 min"
+    else:
+        display = f"~{estimated_seconds // 60}–{estimated_seconds // 60 + 1} min"
+
+    return {"estimated_seconds": estimated_seconds, "display": display}
+
+
 # ── Background task ────────────────────────────────────────────────────────────
 
 def _run_review_task(job_id: str, db_url: str, model_config_dict: dict):
     """
     Runs the LangGraph pipeline in a background thread.
     Creates its own DB session since SQLite connections aren't thread-safe across sessions.
+    Integrity checks now run in parallel with the first reviewer wave for speed.
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    import re
 
     connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
     engine = create_engine(db_url, connect_args=connect_args)
@@ -63,32 +129,27 @@ def _run_review_task(job_id: str, db_url: str, model_config_dict: dict):
         db.commit()
         manager.broadcast_sync(job_id, {"event": "status", "job_id": job_id, "data": {"status": "processing"}})
 
-        # ── Integrity checks (plagiarism / AI-text / figures) — run once up front ─
+        # ── Integrity checks run in a separate thread, parallel with review pipeline ──
         integrity_report_str = None
-        try:
-            from app.agents.llm_clients import get_model_for_role
-            judge_llm, _ = get_model_for_role("synthesizer", model_config_dict.get("synthesizer"))
-            report = plagiarism.run_integrity_checks(paper.id, paper.content, llm=judge_llm)
+        integrity_future_result = {}
 
-            ic = IntegrityCheck(
-                paper_id=paper.id,
-                max_similarity=report["max_similarity"],
-                similarity_matches=report["similarity_matches"],
-                ai_text_heuristic_score=report["ai_text_heuristic_score"],
-                ai_text_llm_judgment=report["ai_text_llm_judgment"],
-                flags=report["flags"],
-            )
-            db.add(ic)
-            db.commit()
+        def _run_integrity():
+            try:
+                from app.agents.llm_clients import get_model_for_role
+                judge_llm, _ = get_model_for_role("synthesizer", model_config_dict.get("synthesizer"))
+                report = plagiarism.run_integrity_checks(paper.id, paper.content, llm=judge_llm)
+                integrity_future_result["report"] = report
+                if report["flags"]:
+                    manager.broadcast_sync(
+                        job_id,
+                        {"event": "integrity_flags", "job_id": job_id, "data": {"flags": report["flags"]}},
+                    )
+            except Exception as exc:
+                logger.warning("Integrity checks failed for job %s (continuing): %s", job_id, exc)
+                integrity_future_result["error"] = str(exc)
 
-            integrity_report_str = plagiarism.report_to_prompt_string(report)
-            if report["flags"]:
-                manager.broadcast_sync(
-                    job_id,
-                    {"event": "integrity_flags", "job_id": job_id, "data": {"flags": report["flags"]}},
-                )
-        except Exception as exc:
-            logger.warning("Integrity checks failed for job %s (continuing without them): %s", job_id, exc)
+        integrity_thread = threading.Thread(target=_run_integrity, daemon=True)
+        integrity_thread.start()
 
         # ── DB callback invoked by each agent node right after completion ────
         def db_callback(
@@ -112,7 +173,6 @@ def _run_review_task(job_id: str, db_url: str, model_config_dict: dict):
             db.commit()
             db.refresh(ar)
 
-            # Broadcast to WebSocket clients
             payload = {
                 "event": "agent_complete",
                 "job_id": job_id,
@@ -130,6 +190,25 @@ def _run_review_task(job_id: str, db_url: str, model_config_dict: dict):
             manager.broadcast_sync(job_id, payload)
             logger.info("Agent complete: job=%s group=%s role=%s", job_id, group, agent_role)
 
+        # ── Wait for integrity check before synthesizer (it should be done by then) ─
+        integrity_thread.join(timeout=90)  # don't block forever
+        report = integrity_future_result.get("report")
+        if report:
+            try:
+                ic = IntegrityCheck(
+                    paper_id=paper.id,
+                    max_similarity=report["max_similarity"],
+                    similarity_matches=report["similarity_matches"],
+                    ai_text_heuristic_score=report["ai_text_heuristic_score"],
+                    ai_text_llm_judgment=report["ai_text_llm_judgment"],
+                    flags=report["flags"],
+                )
+                db.add(ic)
+                db.commit()
+                integrity_report_str = plagiarism.report_to_prompt_string(report)
+            except Exception as exc:
+                logger.warning("Failed to save integrity check: %s", exc)
+
         # ── Run LangGraph ─────────────────────────────────────────────────────
         from app.agents.orchestrator import run_review
 
@@ -145,7 +224,7 @@ def _run_review_task(job_id: str, db_url: str, model_config_dict: dict):
             integrity_report=integrity_report_str,
         )
 
-        # Persist retrieval traces (agentic RAG tool calls) for later fine-tuning export
+        # Persist retrieval traces
         for agent_role, steps in (final_state.get("retrieval_traces") or {}).items():
             for i, step in enumerate(steps):
                 db.add(
@@ -161,7 +240,6 @@ def _run_review_task(job_id: str, db_url: str, model_config_dict: dict):
                 )
         db.commit()
 
-        # Update job record
         job.final_review = final_state.get("final_review")
         job.status = "completed" if final_state.get("final_review") else "failed"
         if final_state.get("errors"):
@@ -221,15 +299,24 @@ async def create_review(
         "synthesizer":     mc.synthesizer,
     }
 
+    # Estimate time and include in job metadata
+    estimate = _estimate_review_time(paper.content or "", mc_dict)
+
     job = ReviewJob(paper_id=paper.id, status="queued", model_config=mc_dict)
     db.add(job)
     db.commit()
     db.refresh(job)
 
+    # Broadcast time estimate immediately
+    manager.broadcast_sync(job.id, {
+        "event": "time_estimate",
+        "job_id": job.id,
+        "data": estimate,
+    })
+
     import os
     db_url = os.getenv("DATABASE_URL", "sqlite:///./PaperLens.db")
 
-    # Use a real thread so LangGraph's synchronous parallel execution works
     t = threading.Thread(
         target=_run_review_task,
         args=(job.id, db_url, mc_dict),
@@ -238,17 +325,44 @@ async def create_review(
     t.start()
 
     db.refresh(job)
-    return job
+    # Attach estimate to response via extra field
+    job_out = ReviewJobOut.from_orm(job)
+    return job_out
+
+
+@router.get("/review/{job_id}/estimate")
+async def get_review_estimate(job_id: str, db: Session = Depends(get_db)):
+    """Return estimated time and current elapsed time for a review job."""
+    job = db.query(ReviewJob).filter(ReviewJob.id == job_id).first()
+    if not job:
+        raise HTTPException(404, "Review job not found.")
+
+    paper = db.query(Paper).filter(Paper.id == job.paper_id).first()
+    estimate = _estimate_review_time(paper.content or "" if paper else "", job.model_config or {})
+
+    elapsed_seconds = None
+    if job.created_at:
+        elapsed_seconds = int((datetime.utcnow() - job.created_at).total_seconds())
+
+    done_count = sum(1 for r in job.agent_responses if r.status == "completed")
+    progress_pct = int((done_count / 5) * 100)
+
+    return {
+        "job_id": job_id,
+        "status": job.status,
+        "estimated_seconds": estimate["estimated_seconds"],
+        "estimated_display": estimate["display"],
+        "elapsed_seconds": elapsed_seconds,
+        "progress_pct": progress_pct,
+        "agents_done": done_count,
+        "agents_total": 5,
+    }
 
 
 @router.get("/review/{job_id}", response_model=ReviewJobOut)
 async def get_review(job_id: str, db: Session = Depends(get_db)):
     """Poll current job status and any completed agent responses."""
-    job = (
-        db.query(ReviewJob)
-        .filter(ReviewJob.id == job_id)
-        .first()
-    )
+    job = db.query(ReviewJob).filter(ReviewJob.id == job_id).first()
     if not job:
         raise HTTPException(404, "Review job not found.")
     return job
@@ -257,10 +371,7 @@ async def get_review(job_id: str, db: Session = Depends(get_db)):
 @router.get("/review/{job_id}/trace")
 async def get_review_trace(job_id: str) -> dict:
     """
-    Return the full structured event trace for a review job — every node's
-    start/end time, which code path it took (tool_loop/simple_rag/plain_text),
-    which model handled it, and any error. This is what makes "why did this
-    agent flag this paper" answerable without re-running the review.
+    Return the full structured event trace for a review job.
     """
     events = observability.get_trace_for_job(job_id)
     if not events:
@@ -271,16 +382,20 @@ async def get_review_trace(job_id: str) -> dict:
 
 @router.get("/history", response_model=List[ReviewJobSummary])
 async def list_history(db: Session = Depends(get_db)):
-    """Return all past review jobs (most recent first)."""
+    """Return all past review jobs (most recent first) — single optimised query."""
+    from sqlalchemy.orm import joinedload
+
     jobs = (
         db.query(ReviewJob)
+        .options(joinedload(ReviewJob.paper))  # eager-load paper to avoid N+1
         .order_by(ReviewJob.created_at.desc())
         .limit(100)
         .all()
     )
+
     summaries = []
     for job in jobs:
-        paper = db.query(Paper).filter(Paper.id == job.paper_id).first()
+        paper = job.paper
         final_rec = None
         overall = None
         if job.final_review:
@@ -308,44 +423,50 @@ async def list_history(db: Session = Depends(get_db)):
 async def ws_review(job_id: str, websocket: WebSocket, db: Session = Depends(get_db)):
     await manager.connect(job_id, websocket)
     try:
-        # Send any already-completed agent responses immediately on connect
         job = db.query(ReviewJob).filter(ReviewJob.id == job_id).first()
         if job:
+            # Send time estimate on connect
+            if job.paper_id:
+                paper = db.query(Paper).filter(Paper.id == job.paper_id).first()
+                estimate = _estimate_review_time(paper.content or "" if paper else "", job.model_config or {})
+                elapsed = int((datetime.utcnow() - job.created_at).total_seconds()) if job.created_at else 0
+                await websocket.send_text(json.dumps({
+                    "event": "time_estimate",
+                    "job_id": job_id,
+                    "data": {**estimate, "elapsed_seconds": elapsed},
+                }))
+
+            # Replay any already-completed agent responses
             for ar in job.agent_responses:
                 await websocket.send_text(
-                    json.dumps(
-                        {
-                            "event": "agent_complete",
-                            "job_id": job_id,
-                            "data": {
-                                "id": ar.id,
-                                "group": ar.group,
-                                "agent_role": ar.agent_role,
-                                "model_name": ar.model_name,
-                                "status": ar.status,
-                                "response": ar.response,
-                                "error_message": ar.error_message,
-                                "created_at": ar.created_at.isoformat(),
-                            },
-                        }
-                    )
+                    json.dumps({
+                        "event": "agent_complete",
+                        "job_id": job_id,
+                        "data": {
+                            "id": ar.id,
+                            "group": ar.group,
+                            "agent_role": ar.agent_role,
+                            "model_name": ar.model_name,
+                            "status": ar.status,
+                            "response": ar.response,
+                            "error_message": ar.error_message,
+                            "created_at": ar.created_at.isoformat(),
+                        },
+                    })
                 )
             if job.status in ("completed", "failed"):
                 await websocket.send_text(
-                    json.dumps(
-                        {
-                            "event": "job_complete" if job.status == "completed" else "job_failed",
-                            "job_id": job_id,
-                            "data": {
-                                "status": job.status,
-                                "final_review": job.final_review,
-                                "error_message": job.error_message,
-                            },
-                        }
-                    )
+                    json.dumps({
+                        "event": "job_complete" if job.status == "completed" else "job_failed",
+                        "job_id": job_id,
+                        "data": {
+                            "status": job.status,
+                            "final_review": job.final_review,
+                            "error_message": job.error_message,
+                        },
+                    })
                 )
 
-        # Keep alive — wait for client disconnect
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:

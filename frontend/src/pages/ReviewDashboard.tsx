@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import {
   ArrowLeft, FileText, Users, Tag, Calendar, ExternalLink,
   BookOpen, ChevronDown, ChevronUp, Cpu, Zap, CheckCircle2,
-  AlertTriangle, Clock, Loader2,
+  AlertTriangle, Clock, Loader2, Timer,
 } from 'lucide-react'
 import { getReview, type ReviewJob, type AgentResponse, type FinalReview } from '../api'
 import ProgressTracker from '../components/ProgressTracker'
@@ -30,9 +30,13 @@ export default function ReviewDashboard() {
   const [error, setError]           = useState<string | null>(null)
   const [showComparison, setShowComparison] = useState(false)
   const [abstractExpanded, setAbstractExpanded] = useState(false)
+  const [timeEstimate, setTimeEstimate] = useState<{ display: string; estimated_seconds: number } | null>(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const comparisonRef = useRef<HTMLDivElement>(null)
   const wsRef   = useRef<WebSocket | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const startTimeRef = useRef<number>(Date.now())
 
   useEffect(() => {
     if (!jobId) return
@@ -40,6 +44,22 @@ export default function ReviewDashboard() {
       .then(j => { setJob(j); setLoading(false) })
       .catch(e => { setError(e.message); setLoading(false) })
   }, [jobId])
+
+  // Elapsed timer — ticks every second while job is running
+  useEffect(() => {
+    startTimeRef.current = Date.now()
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startTimeRef.current) / 1000))
+    }, 1000)
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [jobId])
+
+  // Stop timer when job completes/fails
+  useEffect(() => {
+    if (job?.status === 'completed' || job?.status === 'failed') {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [job?.status])
 
   useEffect(() => {
     if (!jobId) return
@@ -49,6 +69,9 @@ export default function ReviewDashboard() {
     ws.onmessage = evt => {
       try {
         const msg: WSMessage = JSON.parse(evt.data)
+        if (msg.event === 'time_estimate') {
+          setTimeEstimate(msg.data as any)
+        }
         if (msg.event === 'agent_complete') {
           const ar = msg.data as unknown as AgentResponse
           setJob(prev => {
@@ -74,7 +97,7 @@ export default function ReviewDashboard() {
           setJob(j)
           if (j.status === 'completed' || j.status === 'failed') clearInterval(pollRef.current!)
         }).catch(() => {})
-      }, 5000)
+      }, 4000)
     }
     return () => { ws.close(); if (pollRef.current) clearInterval(pollRef.current) }
   }, [jobId])
@@ -85,15 +108,15 @@ export default function ReviewDashboard() {
   }
 
   if (loading) return (
-    <div className="space-y-4">
-      <div className="h-6 w-40 bg-slate-200 rounded animate-pulse" />
-      <div className="h-8 w-72 bg-slate-200 rounded animate-pulse" />
+    <div className="space-y-4 animate-pulse">
+      <div className="h-6 w-40 bg-slate-200 rounded" />
+      <div className="h-8 w-72 bg-slate-200 rounded" />
       <SkeletonCard /><SkeletonCard />
     </div>
   )
 
   if (error || !job) return (
-    <div className="text-center py-20">
+    <div className="text-center py-20 animate-fade-in">
       <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
       <p className="text-red-600 font-medium mb-4">{error ?? 'Review not found.'}</p>
       <Link to="/" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl font-semibold text-sm hover:bg-indigo-700 transition-colors">
@@ -108,11 +131,11 @@ export default function ReviewDashboard() {
   const doneCount = job.agent_responses.filter(r => r.status === 'completed').length
 
   return (
-    <div className="space-y-5 pb-8">
+    <div className="space-y-5 pb-8 animate-fade-in">
 
       {/* Back */}
-      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors font-medium">
-        <ArrowLeft className="w-4 h-4" /> New Review
+      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors font-medium group">
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> New Review
       </Link>
 
       {/* ── SECTION 1: PAPER ─────────────────────────────────────────── */}
@@ -122,6 +145,7 @@ export default function ReviewDashboard() {
       <AiSection
         job={job} doneCount={doneCount} bothCriticsDone={bothCriticsDone}
         showComparison={showComparison} comparisonRef={comparisonRef}
+        timeEstimate={timeEstimate} elapsedSeconds={elapsedSeconds}
         onShowComparison={scrollToComparison}
         onToggleComparison={() => setShowComparison(v => !v)}
       />
@@ -237,16 +261,28 @@ function Chip({ icon, label, color }: { icon: React.ReactNode; label: string; co
 }
 
 // ── AI Analysis Section ───────────────────────────────────────────────────────
-function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparisonRef, onShowComparison, onToggleComparison }: {
+function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparisonRef, onShowComparison, onToggleComparison, timeEstimate, elapsedSeconds }: {
   job: ReviewJob; doneCount: number; bothCriticsDone: boolean;
   showComparison: boolean; comparisonRef: React.RefObject<HTMLDivElement>;
   onShowComparison: () => void; onToggleComparison: () => void;
+  timeEstimate: { display: string; estimated_seconds: number } | null;
+  elapsedSeconds: number;
 }) {
   const total     = 5
   const pct       = Math.round((doneCount / total) * 100)
   const isRunning = job.status === 'processing' || job.status === 'queued'
   const isFailed  = job.status === 'failed'
   const isDone    = job.status === 'completed'
+
+  // Time remaining estimate
+  const remaining = timeEstimate
+    ? Math.max(0, timeEstimate.estimated_seconds - elapsedSeconds)
+    : null
+
+  const formatTime = (s: number) => {
+    if (s < 60) return `${s}s`
+    return `${Math.floor(s / 60)}m ${s % 60}s`
+  }
 
   return (
     <section>
@@ -264,8 +300,8 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
             const done = job.agent_responses.some(r => r.group === a.group && r.agent_role === a.role && r.status === 'completed')
             return (
               <div key={a.id} title={`${a.label} (${a.role})`}
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-[8px] font-black transition-all ${
-                  done ? 'text-white' : 'text-slate-300 bg-white'
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center text-[8px] font-black transition-all duration-300 ${
+                  done ? 'text-white scale-110' : 'text-slate-300 bg-white'
                 }`}
                 style={{ borderColor: a.color, background: done ? a.color : undefined }}>
                 {done ? <CheckCircle2 className="w-3 h-3" /> : <span style={{ color: a.color }}>{a.label[0]}</span>}
@@ -277,12 +313,12 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
 
       <div className="space-y-4">
         {/* Pipeline status card */}
-        <div className={`bg-white border rounded-2xl shadow-sm px-6 py-4 ${
-          isFailed ? 'border-red-200' : isDone ? 'border-emerald-200' : isRunning ? 'border-indigo-200' : 'border-slate-200'
+        <div className={`bg-white border rounded-2xl shadow-sm px-6 py-4 transition-all duration-500 ${
+          isFailed ? 'border-red-200 bg-red-50/30' : isDone ? 'border-emerald-200 bg-emerald-50/20' : isRunning ? 'border-indigo-200' : 'border-slate-200'
         }`}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              {isDone    && <CheckCircle2 className="w-6 h-6 text-emerald-500 flex-shrink-0" />}
+              {isDone    && <CheckCircle2 className="w-6 h-6 text-emerald-500 flex-shrink-0 animate-count-up" />}
               {isRunning && <Loader2 className="w-6 h-6 text-indigo-500 animate-spin flex-shrink-0" />}
               {isFailed  && <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0" />}
               {!isDone && !isRunning && !isFailed && <Zap className="w-6 h-6 text-slate-400 flex-shrink-0" />}
@@ -297,21 +333,64 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
                 </p>
               </div>
             </div>
-            {isDone && job.final_review?.final_scores?.overall != null && (
-              <div className="text-right flex-shrink-0">
-                <p className="text-3xl font-black tabular-nums text-indigo-600">
-                  {job.final_review.final_scores.overall.toFixed(1)}
-                </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">out of 10</p>
-              </div>
-            )}
+
+            <div className="flex items-center gap-4 flex-shrink-0">
+              {/* Time estimate / elapsed */}
+              {isRunning && (
+                <div className="text-right">
+                  {remaining !== null && remaining > 0 ? (
+                    <>
+                      <div className="flex items-center gap-1 text-indigo-600">
+                        <Timer className="w-3.5 h-3.5" />
+                        <span className="text-sm font-bold tabular-nums">{formatTime(remaining)}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5">remaining (est.)</p>
+                    </>
+                  ) : timeEstimate ? (
+                    <>
+                      <div className="flex items-center gap-1 text-slate-500">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span className="text-sm font-semibold tabular-nums">{formatTime(elapsedSeconds)}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5">elapsed · est. {timeEstimate.display}</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1 text-slate-500">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span className="text-sm font-semibold tabular-nums">{formatTime(elapsedSeconds)}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5">elapsed</p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {isDone && job.final_review?.final_scores?.overall != null && (
+                <div className="text-right">
+                  <p className="text-3xl font-black tabular-nums text-indigo-600 animate-count-up">
+                    {job.final_review.final_scores.overall.toFixed(1)}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">out of 10</p>
+                </div>
+              )}
+            </div>
           </div>
+
           {/* Progress bar */}
-          <div className="mt-4 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-700 ${
-              isFailed ? 'bg-red-400' : isDone ? 'bg-emerald-500' : 'bg-indigo-500'
+          <div className="mt-4 h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className={`h-full rounded-full transition-all duration-700 ease-out ${
+              isFailed ? 'bg-red-400' : isDone ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-500 to-blue-400'
             }`} style={{ width: `${pct}%` }} />
           </div>
+
+          {/* Stage labels */}
+          {isRunning && timeEstimate && (
+            <div className="mt-2 flex justify-between text-[9px] text-slate-400 font-medium">
+              <span>Reviewing…</span>
+              <span>Est. {timeEstimate.display} total</span>
+            </div>
+          )}
         </div>
 
         {/* ProgressTracker */}
