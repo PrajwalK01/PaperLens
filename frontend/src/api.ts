@@ -7,16 +7,11 @@
 import axios from 'axios';
 
 // Detect if we're running on Vercel (production) with no backend configured
-const BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+const BASE = import.meta.env.VITE_API_BASE || 'https://paperlens-kr0g.onrender.com';
 
 // Warn in console if running in production without API base set
 if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !import.meta.env.VITE_API_BASE) {
-  console.error(
-    '[PaperLens] VITE_API_BASE is not set.\n' +
-    'Go to Vercel → Project Settings → Environment Variables\n' +
-    'Add: VITE_API_BASE = https://your-render-url.onrender.com\n' +
-    'Then redeploy.'
-  );
+  console.warn('[PaperLens] VITE_API_BASE not set — falling back to https://paperlens-kr0g.onrender.com');
 }
 
 const api = axios.create({ baseURL: BASE });
