@@ -105,7 +105,7 @@ export default function Layout() {
 
   return (
     <AuthContext.Provider value={{ user, refresh: refreshUser, openAuth }}>
-        <div className="flex flex-col h-screen bg-[#f8fafc] font-sans overflow-hidden">
+        <div className="flex flex-col h-screen bg-[#111214] font-sans overflow-hidden">
 
           {/* ── Top Nav ───────────────────────────────────────────────── */}
           <TopNav user={user} showUserMenu={showUserMenu}
@@ -120,12 +120,12 @@ export default function Layout() {
           <div className="flex-1 flex overflow-hidden">
 
             {/* LEFT: Activity + Nav */}
-            <aside className="w-[240px] bg-[#161b33] flex flex-col shrink-0 text-slate-300 border-r border-[#252f55]">
-              <div className="px-4 pt-4 pb-3 border-b border-[#252f55]">
-                <h2 className="font-bold text-white text-sm">Activity History</h2>
-                <p className="text-[10px] text-slate-400 mt-0.5">Your project timeline</p>
+            <aside className="w-[240px] bg-[#18191c] flex flex-col shrink-0 text-slate-300 border-r border-[#2a2b2e]">
+              <div className="px-4 pt-4 pb-3 border-b border-[#2a2b2e]">
+                <h2 className="font-bold text-white text-sm tracking-tight">Activity History</h2>
+                <p className="text-[10px] text-zinc-500 mt-0.5">Your project timeline</p>
               </div>
-              <nav className="px-2 py-2 border-b border-[#252f55] flex flex-col gap-0.5">
+              <nav className="px-2 py-2 border-b border-[#2a2b2e] flex flex-col gap-0.5">
                 <SideNavLink to="/" label="Home" icon={<Home size={14} />} current={location.pathname} />
                 <SideNavLink to="/dashboard" label="Dashboard" icon={<LayoutDashboard size={14} />} current={location.pathname} />
                 <SideNavLink to="/history" label="Review History" icon={<History size={14} />} current={location.pathname} />
@@ -167,7 +167,7 @@ export default function Layout() {
             </aside>
 
             {/* CENTER: Main content */}
-            <main className="flex-1 overflow-y-auto bg-[#f8fafc]">
+            <main className="flex-1 overflow-y-auto bg-[#111214]">
               <div className="max-w-4xl mx-auto h-full p-6">
                 <Outlet />
               </div>
@@ -189,7 +189,7 @@ export default function Layout() {
           <style>{`
             .custom-scrollbar::-webkit-scrollbar { width: 3px; }
             .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-            .custom-scrollbar::-webkit-scrollbar-thumb { background: #2d3559; border-radius: 4px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: #3a3b3e; border-radius: 4px; }
           `}</style>
         </div>
     </AuthContext.Provider>
@@ -263,61 +263,60 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
     : ['What makes a good paper?', 'Explain peer review', 'How does LangGraph work?'];
 
   return (
-    <aside className="w-[320px] bg-white border-l border-slate-200 flex flex-col shrink-0 shadow-[-4px_0_20px_rgba(0,0,0,0.04)]">
+    <aside className="w-[320px] bg-[#18191c] border-l border-[#2a2b2e] flex flex-col shrink-0">
 
       {/* Header */}
-      <div className="h-14 border-b border-slate-100 flex items-center justify-between px-4 shrink-0">
+      <div className="h-14 border-b border-[#2a2b2e] flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="relative">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
               <Sparkles size={15} className="text-white" />
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-[#18191c] rounded-full" />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-800">Research Assistant</p>
-            {jobId && <p className="text-[10px] text-indigo-500 font-medium">Paper context loaded</p>}
+            <p className="text-sm font-bold text-white">Research Assistant</p>
+            {jobId && <p className="text-[10px] text-indigo-400 font-medium">Paper context loaded</p>}
           </div>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={clear} title="Clear chat"
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:bg-white/8 hover:text-zinc-300 transition-colors">
             <Trash2 size={13} />
           </button>
           <button onClick={onClose} title="Close chat"
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-600 hover:bg-white/8 hover:text-zinc-300 transition-colors">
             <X size={14} />
           </button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" style={{ scrollbarColor: '#e2e8f0 transparent' }}>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" style={{ scrollbarColor: '#2a2b2e transparent' }}>
         {messages.map((msg, i) => (
           <ChatBubble key={i} msg={msg} />
         ))}
 
-        {/* Streaming bubble */}
         {streaming && streamText && (
           <ChatBubble msg={{ role: 'assistant', content: streamText }} streaming />
         )}
         {streaming && !streamText && (
           <div className="flex gap-1 px-3 py-2">
             {[0,1,2].map(i => (
-              <div key={i} className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+              <div key={i} className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"
                 style={{ animationDelay: `${i * 150}ms` }} />
             ))}
           </div>
         )}
 
-        {/* Suggestions (only when no messages from user yet) */}
         {messages.filter(m => m.role === 'user').length === 0 && !streaming && (
           <div className="space-y-1.5 mt-2">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">Try asking</p>
+            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-wider px-1">Try asking</p>
             {SUGGESTIONS.map(s => (
               <button key={s} onClick={() => { setInput(s); }}
-                className="w-full text-left text-xs text-slate-600 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700
-                  border border-slate-200 hover:border-indigo-200 rounded-lg px-3 py-2 transition-colors">
+                className="w-full text-left text-xs text-zinc-400 bg-white/4 hover:bg-indigo-500/15 hover:text-indigo-300
+                  border border-white/6 hover:border-indigo-500/30 rounded-lg px-3 py-2 transition-colors">
                 {s}
               </button>
             ))}
@@ -328,38 +327,39 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-slate-100 shrink-0">
-        <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-xl
-          focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+      <div className="p-3 border-t border-[#2a2b2e] shrink-0">
+        <div className="flex items-end gap-2 bg-[#1e1f21] border border-[#2a2b2e] rounded-xl
+          focus-within:border-indigo-500/50 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
           <textarea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
             placeholder="Ask anything about your research…"
             rows={2}
-            className="flex-1 bg-transparent px-3 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400
+            className="flex-1 bg-transparent px-3 py-2.5 text-[13px] text-zinc-200 placeholder:text-zinc-600
               resize-none focus:outline-none leading-relaxed"
           />
           <div className="flex items-center gap-1 p-2">
             {streaming ? (
               <button onClick={stop}
-                className="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors">
-                <div className="w-3 h-3 bg-red-600 rounded-sm" />
+                className="w-8 h-8 flex items-center justify-center bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
+                <div className="w-3 h-3 bg-red-400 rounded-sm" />
               </button>
             ) : (
               <button onClick={send} disabled={!input.trim()}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all ${
                   input.trim()
-                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                }`}>
+                    ? 'text-white shadow-lg'
+                    : 'bg-white/5 text-zinc-700 cursor-not-allowed'
+                }`}
+                style={input.trim() ? { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' } : {}}>
                 <Send size={14} />
               </button>
             )}
           </div>
         </div>
-        <p className="text-[10px] text-slate-400 text-center mt-2">
-          {jobId ? '📄 Answering about current paper' : 'General research mode'} · Enter to send
+        <p className="text-[10px] text-zinc-700 text-center mt-2">
+          {jobId ? '📄 Paper context active' : 'General research mode'} · Enter to send
         </p>
       </div>
     </aside>
@@ -370,7 +370,8 @@ function ChatBubble({ msg, streaming = false }: { msg: ChatMsg; streaming?: bool
   if (msg.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm">
+        <div className="max-w-[85%] text-white rounded-2xl rounded-tr-sm px-3.5 py-2.5 text-[13px] leading-relaxed shadow-sm"
+          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
           {msg.content}
         </div>
       </div>
@@ -378,13 +379,14 @@ function ChatBubble({ msg, streaming = false }: { msg: ChatMsg; streaming?: bool
   }
   return (
     <div className="flex gap-2.5 items-start">
-      <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <Sparkles size={12} className="text-indigo-600" />
+      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+        style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+        <Sparkles size={12} className="text-white" />
       </div>
-      <div className={`max-w-[88%] bg-white border border-slate-100 rounded-2xl rounded-tl-sm px-3.5 py-2.5
-        text-[13px] text-slate-700 leading-relaxed shadow-sm ${streaming ? 'border-indigo-100' : ''}`}>
+      <div className={`max-w-[88%] bg-[#1e1f21] border rounded-2xl rounded-tl-sm px-3.5 py-2.5
+        text-[13px] text-zinc-300 leading-relaxed ${streaming ? 'border-indigo-500/30' : 'border-[#2a2b2e]'}`}>
         {msg.content}
-        {streaming && <span className="inline-block w-1 h-3.5 bg-indigo-500 ml-0.5 animate-pulse rounded-sm" />}
+        {streaming && <span className="inline-block w-1 h-3.5 bg-indigo-400 ml-0.5 animate-pulse rounded-sm" />}
       </div>
     </div>
   );
@@ -393,58 +395,78 @@ function ChatBubble({ msg, streaming = false }: { msg: ChatMsg; streaming?: bool
 // ── Top Navigation ────────────────────────────────────────────────────────────
 function TopNav({ user, showUserMenu, onToggleUserMenu,
   onCloseUserMenu, onLogout, initials, chatOpen, onToggleChat, onOpenAuth }: any) {
-  const navigate = useNavigate();
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-5 shrink-0 z-10">
-      <div className="flex items-center gap-5">
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-white text-lg shadow-sm select-none">
-            P<span className="text-indigo-300">L</span>
-          </div>
-          <span className="font-bold text-slate-800 text-lg tracking-tight">PaperLens</span>
-        </Link>
-      </div>
+    <header className="h-14 bg-[#18191c] border-b border-[#2a2b2e] flex items-center justify-between px-5 shrink-0 z-10">
+      {/* Logo */}
+      <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm select-none shadow-lg"
+          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          <span className="text-white tracking-tight">PL</span>
+        </div>
+        <div className="flex flex-col leading-none">
+          <span className="font-extrabold text-white text-[15px] tracking-tight group-hover:text-indigo-300 transition-colors">
+            Paper<span style={{ background: 'linear-gradient(90deg,#818cf8,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Lens</span>
+          </span>
+          <span className="text-[9px] text-zinc-600 font-medium tracking-widest uppercase">AI Peer Review</span>
+        </div>
+      </Link>
 
-      <div className="flex items-center gap-2.5">
-        <Link to="/profile" className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Settings">
-          <Settings size={17} />
+      {/* Right controls */}
+      <div className="flex items-center gap-1.5">
+        <Link to="/profile"
+          className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-white/8 rounded-lg transition-colors"
+          title="Settings">
+          <Settings size={16} />
         </Link>
 
-        {/* Chat toggle button */}
         <button onClick={onToggleChat}
-          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${chatOpen ? 'bg-indigo-100 text-indigo-600' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}
+          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+            chatOpen
+              ? 'bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/30'
+              : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/8'
+          }`}
           title="AI Research Assistant">
-          <MessageSquare size={17} />
+          <MessageSquare size={16} />
         </button>
 
-        <div className="h-4 w-px bg-slate-200 mx-0.5" />
+        <div className="h-4 w-px bg-white/8 mx-1" />
 
-        {/* User menu / Sign in */}
         {user ? (
           <div className="relative">
-            <button onClick={onToggleUserMenu} className="flex items-center gap-1.5 hover:bg-slate-50 p-1 rounded-lg">
-              <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs select-none">
+            <button onClick={onToggleUserMenu}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-white/8 transition-colors">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs select-none text-white"
+                style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
                 {initials}
               </div>
-              <ChevronDown size={13} className="text-slate-400" />
+              <ChevronDown size={12} className="text-zinc-500" />
             </button>
             {showUserMenu && (
-              <div className="absolute right-0 mt-1 w-52 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-                  <p className="text-sm font-bold text-slate-800">{user.username}</p>
-                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                  {user.is_admin && <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded mt-1 inline-block">Admin</span>}
+              <div className="absolute right-0 mt-1.5 w-52 bg-[#1e1f21] border border-[#2a2b2e] rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#2a2b2e]">
+                  <p className="text-sm font-bold text-white">{user.username}</p>
+                  <p className="text-xs text-zinc-500 truncate mt-0.5">{user.email}</p>
+                  {user.is_admin && (
+                    <span className="text-[10px] font-bold text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded mt-1.5 inline-block border border-amber-400/20">
+                      Admin
+                    </span>
+                  )}
                 </div>
-                <Link to="/profile" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors" onClick={onCloseUserMenu}>
+                <Link to="/profile"
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors"
+                  onClick={onCloseUserMenu}>
                   <User size={14} /> Profile & Settings
                 </Link>
                 {user.is_admin && (
-                  <Link to="/admin" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors" onClick={onCloseUserMenu}>
+                  <Link to="/admin"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-300 hover:bg-white/5 hover:text-white transition-colors"
+                    onClick={onCloseUserMenu}>
                     <ShieldCheck size={14} /> Admin Dashboard
                   </Link>
                 )}
-                <div className="border-t border-slate-100" />
-                <button onClick={onLogout} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                <div className="border-t border-[#2a2b2e]" />
+                <button onClick={onLogout}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors">
                   <LogOut size={14} /> Logout
                 </button>
               </div>
@@ -452,7 +474,8 @@ function TopNav({ user, showUserMenu, onToggleUserMenu,
           </div>
         ) : (
           <button onClick={onOpenAuth}
-            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors shadow-sm">
+            className="flex items-center gap-1.5 text-white px-4 py-1.5 rounded-lg font-semibold text-sm transition-all shadow-lg"
+            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
             Sign In
           </button>
         )}
@@ -466,7 +489,10 @@ function SideNavLink({ to, label, icon, current }: { to: string; label: string; 
   const active = current === to || (to !== '/' && current.startsWith(to));
   return (
     <Link to={to} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors
-      ${active ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/20' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}>
+      ${active
+        ? 'bg-white/10 text-white border border-white/10'
+        : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5'
+      }`}>
       {icon}{label}
     </Link>
   );
@@ -477,15 +503,15 @@ function EmptyState({ icon, title, sub }: { icon: React.ReactNode; title: string
   return (
     <div className="flex flex-col items-center text-center py-10 px-2">
       <div className="mb-2">{icon}</div>
-      <p className="text-[11px] font-semibold text-slate-400">{title}</p>
-      <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">{sub}</p>
+      <p className="text-[11px] font-semibold text-zinc-500">{title}</p>
+      <p className="text-[10px] text-zinc-600 mt-1 leading-relaxed">{sub}</p>
     </div>
   );
 }
 function TimelineGroup({ date, children }: { date: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-2">{date}</p>
+      <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-wider mb-2">{date}</p>
       <div className="relative">{children}</div>
     </div>
   );
@@ -493,19 +519,19 @@ function TimelineGroup({ date, children }: { date: string; children: React.React
 function TimelineItem({ time, icon, iconBg, title, subtitle, user, isLast }: any) {
   return (
     <div className="relative pl-6 pb-4">
-      {!isLast && <div className="absolute left-[10px] top-5 bottom-0 w-px bg-[#2d3559]" />}
-      <div className="absolute left-0 top-1 w-5 h-5 rounded-full bg-[#1b213b] border border-[#2d3559] flex items-center justify-center z-10">
-        <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+      {!isLast && <div className="absolute left-[10px] top-5 bottom-0 w-px bg-[#2a2b2e]" />}
+      <div className="absolute left-0 top-1 w-5 h-5 rounded-full bg-[#222325] border border-[#2a2b2e] flex items-center justify-center z-10">
+        <div className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
       </div>
-      <div className="bg-[#1b213b] border border-[#2d3559] rounded-lg p-2 hover:bg-[#202642] transition-colors">
+      <div className="bg-[#1e1f21] border border-[#2a2b2e] rounded-lg p-2 hover:bg-[#252628] transition-colors">
         <div className="flex items-center gap-2">
           <div className={`w-7 h-7 rounded-md ${iconBg} text-white flex items-center justify-center flex-shrink-0`}>{icon}</div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold text-slate-200 truncate">{title}</p>
-              <span className="text-[9px] text-slate-500 ml-1 shrink-0">{time}</span>
+              <p className="text-[11px] font-bold text-zinc-200 truncate">{title}</p>
+              <span className="text-[9px] text-zinc-600 ml-1 shrink-0">{time}</span>
             </div>
-            <p className="text-[10px] text-slate-400 truncate">{subtitle}</p>
+            <p className="text-[10px] text-zinc-500 truncate">{subtitle}</p>
           </div>
         </div>
       </div>
