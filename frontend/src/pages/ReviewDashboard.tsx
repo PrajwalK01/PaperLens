@@ -63,7 +63,7 @@ export default function ReviewDashboard() {
 
   useEffect(() => {
     if (!jobId) return
-    const wsBase = (import.meta.env.VITE_API_BASE || 'https://paperlens-kr0g.onrender.com').replace(/^http/, 'ws')
+    const wsBase = (import.meta.env.VITE_API_BASE || 'http://localhost:8000').replace(/^http/, 'ws')
     const ws = new WebSocket(`${wsBase}/ws/review/${jobId}`)
     wsRef.current = ws
     ws.onmessage = evt => {

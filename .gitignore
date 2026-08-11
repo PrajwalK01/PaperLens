@@ -13,6 +13,9 @@ finetune_ready.jsonl
 chroma_store/
 node_modules/
 dist/
+# Dev-only env files — never commit
+.env.local
+*.env.local
 # Dev convenience files — contain test OTPs, never commit
 backend/last_otp.txt
 last_otp.txt
