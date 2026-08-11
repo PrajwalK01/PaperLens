@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Hash, Loader2, AlertCircle, ArrowRight, Upload, X, FileText, Zap, Shield, Brain } from 'lucide-react'
+import { Hash, Loader2, AlertCircle, ArrowRight, Upload, X, FileText, Zap, Shield, Brain, Sparkles } from 'lucide-react'
 import { uploadPdf, fetchArxiv, startReview, type Paper } from '../api'
 
 export default function Home() {
