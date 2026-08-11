@@ -1,25 +1,25 @@
 import os
-import smtplib
 import logging
 from datetime import datetime
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
 
 def send_otp_email(email_to: str, otp: str) -> bool:
     """
-    Sends an OTP verification email to the user.
-    Reads SMTP config from environment variables.
-    Falls back to console + last_otp.txt if SMTP is not configured.
+    Sends an OTP verification email to the user via the Resend HTTPS API.
+
+    Uses Resend instead of raw SMTP because most free-tier PaaS hosts
+    (Render, Heroku, etc.) block outbound SMTP ports (25/465/587) to
+    prevent spam abuse — Resend's API runs over normal HTTPS, so it
+    works from any host without needing a paid plan.
+
+    Falls back to console + last_otp.txt if RESEND_API_KEY is not configured.
     """
-    smtp_host = os.getenv("SMTP_HOST", "").strip()
-    smtp_port = os.getenv("SMTP_PORT", "587").strip()
-    smtp_user = os.getenv("SMTP_USERNAME", "").strip()
-    smtp_pass = os.getenv("SMTP_PASSWORD", "").strip()
-    smtp_use_ssl = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
-    smtp_from = os.getenv("SMTP_FROM_EMAIL", "no-reply@paperlens.com").strip()
+    resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
+    resend_from = os.getenv("RESEND_FROM_EMAIL", "PaperLens <onboarding@resend.dev>").strip()
 
     subject = "PaperLens — Your Verification Code"
     body_text = f"Your PaperLens verification code is: {otp}\nThis code expires in 10 minutes."
@@ -101,49 +101,40 @@ def send_otp_email(email_to: str, otp: str) -> bool:
     )
     print(f"\n[OTP] {email_to} → {otp}\n", flush=True)
 
-    # Skip SMTP if not configured (still has placeholder values)
-    if not smtp_host or not smtp_user or smtp_user in ("", "your_email@gmail.com") or not smtp_pass or smtp_pass in ("", "your_gmail_app_password_here"):
+    # Skip sending if Resend isn't configured
+    if not resend_api_key:
         logger.warning(
-            "SMTP not fully configured. OTP printed to console only. "
-            "Update SMTP_USERNAME and SMTP_PASSWORD in backend/.env to send real emails."
+            "RESEND_API_KEY not configured. OTP printed to console only. "
+            "Set RESEND_API_KEY in Render's environment variables to send real emails."
         )
         return False
 
     try:
-        message = MIMEMultipart("alternative")
-        message["Subject"] = subject
-        message["From"] = f"PaperLens <{smtp_from}>"
-        message["To"] = email_to
-        message.attach(MIMEText(body_text, "plain"))
-        message.attach(MIMEText(body_html, "html"))
-
-        port = int(smtp_port)
-        if smtp_use_ssl or port == 465:
-            server = smtplib.SMTP_SSL(smtp_host, port, timeout=10)
-        else:
-            server = smtplib.SMTP(smtp_host, port, timeout=10)
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-
-        if smtp_user and smtp_pass:
-            server.login(smtp_user, smtp_pass)
-
-        server.sendmail(smtp_from, email_to, message.as_string())
-        server.quit()
-        logger.info("OTP email sent successfully to %s", email_to)
+        response = httpx.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {resend_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": resend_from,
+                "to": [email_to],
+                "subject": subject,
+                "html": body_html,
+                "text": body_text,
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        logger.info("OTP email sent successfully to %s via Resend", email_to)
         return True
 
-    except smtplib.SMTPAuthenticationError:
+    except httpx.HTTPStatusError as e:
         logger.error(
-            "SMTP authentication failed for %s. "
-            "For Gmail, use an App Password: https://myaccount.google.com/apppasswords",
-            smtp_user
+            "Resend API error sending to %s: %s — %s",
+            email_to, e.response.status_code, e.response.text
         )
         return False
-    except smtplib.SMTPConnectError as e:
-        logger.error("SMTP connection failed to %s:%s — %s", smtp_host, smtp_port, e)
-        return False
     except Exception as e:
-        logger.error("Failed to send OTP email to %s: %s", email_to, e)
+        logger.error("Failed to send OTP email to %s via Resend: %s", email_to, e)
         return False
