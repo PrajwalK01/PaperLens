@@ -61,8 +61,8 @@ from app.utils import cost_tracker
 
 logger = logging.getLogger(__name__)
 
-MAX_RETRIES = 1         # reduced from 2 — fail fast, don't wait on flaky providers
-RETRY_DELAY = 1         # reduced from 3 — quick retry, not a long sleep
+MAX_RETRIES = 3         # increased — handle rate limits
+RETRY_DELAY = 2         # base delay, doubles each retry
 
 AGENTIC_RAG_ENABLED = os.getenv("AGENTIC_RAG_ENABLED", "true").lower() == "true"
 INDEPENDENT_AGENTS_MODE = os.getenv("INDEPENDENT_AGENTS_MODE", "false").lower() == "true"
@@ -130,9 +130,16 @@ def _call_llm(role: str, override_model: Optional[str], system_text: str, human_
             return parsed, model_name
         except Exception as exc:
             last_exc = exc
-            logger.warning("LLM call failed (role=%s attempt=%d): %s", role, attempt + 1, exc)
+            err_str = str(exc).lower()
+            # Rate limit — wait longer before retry
+            wait = RETRY_DELAY * (2 ** attempt)
+            if "rate" in err_str or "429" in err_str or "quota" in err_str:
+                wait = max(wait, 15)
+                logger.warning("Rate limit hit (role=%s attempt=%d), waiting %ds", role, attempt + 1, wait)
+            else:
+                logger.warning("LLM call failed (role=%s attempt=%d): %s", role, attempt + 1, exc)
             if attempt < MAX_RETRIES:
-                time.sleep(RETRY_DELAY * (attempt + 1))
+                time.sleep(wait)
     raise RuntimeError(f"LLM call failed after {MAX_RETRIES + 1} attempts") from last_exc
 
 
@@ -147,9 +154,15 @@ def _call_llm_agentic(role: str, override_model: Optional[str], system_text: str
             return parsed, model_name, trace
         except Exception as exc:
             last_exc = exc
-            logger.warning("Agentic LLM call failed (role=%s attempt=%d): %s", role, attempt + 1, exc)
+            err_str = str(exc).lower()
+            wait = RETRY_DELAY * (2 ** attempt)
+            if "rate" in err_str or "429" in err_str or "quota" in err_str:
+                wait = max(wait, 15)
+                logger.warning("Rate limit hit (role=%s attempt=%d), waiting %ds", role, attempt + 1, wait)
+            else:
+                logger.warning("Agentic LLM call failed (role=%s attempt=%d): %s", role, attempt + 1, exc)
             if attempt < MAX_RETRIES:
-                time.sleep(RETRY_DELAY * (attempt + 1))
+                time.sleep(wait)
     raise RuntimeError(f"Agentic LLM call failed after {MAX_RETRIES + 1} attempts") from last_exc
 
 
@@ -222,9 +235,13 @@ def _make_primary_node(group: str):
                 traces = dict(state.get("retrieval_traces", {}))
                 traces[role] = trace
             else:
+                # Truncate to ~12000 chars (~3000 tokens) to avoid Groq rate limits
+                truncated_text = state["paper_full_text"][:12000]
+                if len(state["paper_full_text"]) > 12000:
+                    truncated_text += "\n\n[...paper truncated for token limit...]"
                 human = PRIMARY_REVIEWER_PROMPT.format(
                     group=group, paper_title=state["paper_title"], authors=state["authors"],
-                    paper_full_text=state["paper_full_text"],
+                    paper_full_text=truncated_text,
                 )
                 parsed, model = _call_llm(role, override, system, human, job_id=state["job_id"])
                 traces = state.get("retrieval_traces", {})
@@ -291,8 +308,11 @@ def _make_critic_node(group: str):
                 traces = dict(state.get("retrieval_traces", {}))
                 traces[role] = trace
             else:
+                truncated_text = state["paper_full_text"][:12000]
+                if len(state["paper_full_text"]) > 12000:
+                    truncated_text += "\n\n[...paper truncated for token limit...]"
                 human = CRITIC_REVIEWER_PROMPT.format(
-                    group=group, initial_review_json=initial, paper_full_text=state["paper_full_text"]
+                    group=group, initial_review_json=initial, paper_full_text=truncated_text
                 )
                 parsed, model = _call_llm(role, override, system, human, job_id=state["job_id"])
                 traces = state.get("retrieval_traces", {})
@@ -332,8 +352,11 @@ def node_synthesize(state: PaperLensState) -> dict:
     role = "synthesizer"
     override = state["model_config"].get(role)
     system = _system(state)
+    synth_text = state["paper_full_text"][:8000]
+    if len(state["paper_full_text"]) > 8000:
+        synth_text += "\n\n[...truncated...]"
     human = SYNTHESIZER_PROMPT.format(
-        paper_full_text=state["paper_full_text"],
+        paper_full_text=synth_text,
         group_a_review=json.dumps(state.get("group_a_critic") or state.get("group_a_primary") or {}, indent=2),
         group_b_review=json.dumps(state.get("group_b_critic") or state.get("group_b_primary") or {}, indent=2),
         integrity_report=state.get("integrity_report") or "No automated integrity checks were run for this paper.",
