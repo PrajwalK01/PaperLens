@@ -51,24 +51,26 @@ FALLBACK_CHAIN = [
 
 def _provider_from_model(model: str) -> str:
     """Infer provider from model name string."""
-    model = model.lower()
-    if "claude" in model:
+    model_lower = model.lower()
+    if model_lower.startswith("nvidia:"):
+        return "nvidia"
+    if "claude" in model_lower:
         return "anthropic"
-    if "gpt" in model or "o1" in model or "o3" in model:
+    if "gpt" in model_lower or "o1" in model_lower or "o3" in model_lower:
         return "openai"
-    if "gemini" in model:
+    if "gemini" in model_lower:
         return "google"
-    if "mistral" in model or "mixtral" in model:
+    if "mistral" in model_lower or "mixtral" in model_lower:
         return "mistral"
-    if "grok" in model:
-        return "xai"
-    if "glm" in model:
-        return "zai"
-    if "llama-3.3-70b-versatile" in model or "llama-3.1-8b-instant" in model or model.startswith("groq:"):
+    if "llama-3.3-70b-versatile" in model_lower or "llama-3.1-8b-instant" in model_lower or model_lower.startswith("groq:"):
         return "groq"
-    if "ollama:" in model or "llama3" in model or "qwen" in model or "mistral-local" in model:
+    if "ollama:" in model_lower or "llama3" in model_lower or "qwen" in model_lower:
         return "ollama"
-    if "freellm:" in model:
+    if "grok" in model_lower:
+        return "xai"
+    if "glm" in model_lower:
+        return "zai"
+    if "freellm:" in model_lower:
         return "freellm"
     raise ValueError(f"Cannot infer provider from model name: {model!r}")
 
@@ -86,6 +88,26 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Any:
 
     provider = _provider_from_model(model_name)
     logger.info("Creating LLM client: role=%s  model=%s  provider=%s", role, model_name, provider)
+
+    if provider == "nvidia":
+        # NVIDIA NIM — OpenAI-compatible endpoint
+        # Each model has its own API key stored separately
+        actual_model = model_name.replace("nvidia:", "")
+        # Pick the right key based on model
+        if "ultra" in actual_model or "550b" in actual_model:
+            api_key = os.environ.get("NVIDIA_API_KEY_ULTRA", "")
+        elif "glm" in actual_model or "z-ai" in actual_model:
+            api_key = os.environ.get("NVIDIA_API_KEY_REASON", "")
+        else:
+            api_key = os.environ.get("NVIDIA_API_KEY_FAST", "")
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(
+            model=actual_model,
+            api_key=api_key,
+            base_url="https://integrate.api.nvidia.com/v1",
+            max_tokens=4096,
+            timeout=120,
+        ), model_name
 
     if provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
