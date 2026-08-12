@@ -1,109 +1,123 @@
 """
-LLM client factory.
+LLM client factory for PaperAI.
 
-Supports: Anthropic Claude, OpenAI GPT-4o, Google Gemini, Mistral.
-Model assigned to each agent role is read from environment variables;
-callers may also pass an explicit model string to override.
+Reads model assignments from environment variables at CALL TIME (not import
+time) so .env is already loaded. Defaults to Groq llama-3.3-70b-versatile
+which is free and fast — no OpenAI key required by default.
 
-Environment variables:
-  AGENT_MODEL_GROUP_A_PRIMARY    default: claude-3-5-sonnet-20241022
-  AGENT_MODEL_GROUP_A_CRITIC     default: gemini-2.5-flash
-  AGENT_MODEL_GROUP_B_PRIMARY    default: gpt-4o
-  AGENT_MODEL_GROUP_B_CRITIC     default: mistral-large-latest
-  AGENT_MODEL_SYNTHESIZER        default: claude-3-5-sonnet-20241022
-
-  ANTHROPIC_API_KEY
-  OPENAI_API_KEY
-  GOOGLE_API_KEY
-  MISTRAL_API_KEY
+Supported providers:
+  groq      — llama-3.3-70b-versatile, llama-3.1-8b-instant  (GROQ_API_KEY)
+  nvidia    — nvidia: prefix  (NVIDIA_API_KEY_FAST / _REASON / _ULTRA)
+  anthropic — claude-*        (ANTHROPIC_API_KEY)
+  openai    — gpt-*           (OPENAI_API_KEY)
+  google    — gemini-*        (GOOGLE_API_KEY)
+  mistral   — mistral-*       (MISTRAL_API_KEY)
+  ollama    — ollama:*        (no key, local)
 """
 
 from __future__ import annotations
 
 import os
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-# ── Default model names ────────────────────────────────────────────────────────
-DEFAULTS = {
-    "group_a_primary": os.getenv("AGENT_MODEL_GROUP_A_PRIMARY", "claude-3-5-sonnet-20241022"),
-    "group_a_critic":  os.getenv("AGENT_MODEL_GROUP_A_CRITIC",  "gemini-2.5-flash"),
-    "group_b_primary": os.getenv("AGENT_MODEL_GROUP_B_PRIMARY", "gpt-4o"),
-    "group_b_critic":  os.getenv("AGENT_MODEL_GROUP_B_CRITIC",  "mistral-large-latest"),
-    "synthesizer":     os.getenv("AGENT_MODEL_SYNTHESIZER",     "claude-3-5-sonnet-20241022"),
-}
+
+def _defaults() -> dict:
+    """Read model defaults from env at call time — not at import time."""
+    return {
+        "group_a_primary": os.getenv("AGENT_MODEL_GROUP_A_PRIMARY", "llama-3.3-70b-versatile"),
+        "group_a_critic":  os.getenv("AGENT_MODEL_GROUP_A_CRITIC",  "llama-3.3-70b-versatile"),
+        "group_b_primary": os.getenv("AGENT_MODEL_GROUP_B_PRIMARY", "llama-3.3-70b-versatile"),
+        "group_b_critic":  os.getenv("AGENT_MODEL_GROUP_B_CRITIC",  "llama-3.3-70b-versatile"),
+        "synthesizer":     os.getenv("AGENT_MODEL_SYNTHESIZER",     "llama-3.3-70b-versatile"),
+    }
 
 
-# ── Fallback chain for free-tier resilience ────────────────────────────────────
-# If a role's assigned provider fails (rate limit, outage, deleted free model),
-# get_model_for_role_with_fallback() tries the next provider in this order
-# instead of failing the whole node. Only used when explicitly called — normal
-# get_model_for_role() behavior (used by run_review) is unchanged so existing
-# code isn't affected.
-FALLBACK_CHAIN = [
-    os.getenv("FALLBACK_MODEL_1", "gemini-2.5-flash"),   # Google AI Studio free tier
-    os.getenv("FALLBACK_MODEL_2", "llama-3.3-70b-versatile"),  # Groq free tier (if wired)
-    os.getenv("FALLBACK_MODEL_3", "ollama:llama3.1"),    # local, always available if Ollama is running
-]
+# Module-level DEFAULTS dict — lazily populated on first access
+# Orchestrator reads DEFAULTS["group_a_primary"] etc.
+class _LazyDefaults(dict):
+    """Dict that reads from env on every access so .env is always respected."""
+    def get(self, key, default=None):
+        return _defaults().get(key, default)
+    def __getitem__(self, key):
+        return _defaults()[key]
+    def __contains__(self, key):
+        return key in _defaults()
+
+
+DEFAULTS = _LazyDefaults()
+FALLBACK_CHAIN = ["llama-3.3-70b-versatile"]  # Groq always available
 
 
 def _provider_from_model(model: str) -> str:
     """Infer provider from model name string."""
-    model_lower = model.lower()
-    if model_lower.startswith("nvidia:"):
+    m = model.lower()
+    if m.startswith("nvidia:"):
         return "nvidia"
-    if "claude" in model_lower:
-        return "anthropic"
-    if "gpt" in model_lower or "o1" in model_lower or "o3" in model_lower:
-        return "openai"
-    if "gemini" in model_lower:
-        return "google"
-    if "mistral" in model_lower or "mixtral" in model_lower:
-        return "mistral"
-    if "llama-3.3-70b-versatile" in model_lower or "llama-3.1-8b-instant" in model_lower or model_lower.startswith("groq:"):
+    if m.startswith("groq:"):
         return "groq"
-    if "ollama:" in model_lower or "llama3" in model_lower or "qwen" in model_lower:
+    if m.startswith("ollama:"):
         return "ollama"
-    if "grok" in model_lower:
-        return "xai"
-    if "glm" in model_lower:
-        return "zai"
-    if "freellm:" in model_lower:
+    if m.startswith("freellm:"):
         return "freellm"
+    if "claude" in m:
+        return "anthropic"
+    if "gpt" in m or m.startswith("o1") or m.startswith("o3"):
+        return "openai"
+    if "gemini" in m:
+        return "google"
+    if "mistral" in m or "mixtral" in m:
+        return "mistral"
+    # Groq models by name
+    if any(x in m for x in ["llama-3.3-70b", "llama-3.1-8b", "llama-3.1-70b",
+                              "llama-3.2", "llama-3-70b", "mixtral-8x7b",
+                              "gemma2-9b", "llama3-", "whisper"]):
+        return "groq"
+    if "llama3" in m or "ollama" in m:
+        return "ollama"
+    if "glm" in m:
+        return "nvidia"  # z-ai/glm-5.2 via NVIDIA
     raise ValueError(f"Cannot infer provider from model name: {model!r}")
 
 
-def get_model_for_role(role: str, override: Optional[str] = None) -> Any:
-    """
-    Return a LangChain ChatModel instance for the given agent role.
-
-    :param role: one of the keys in DEFAULTS
-    :param override: explicit model string that overrides the env-var default
-    """
-    model_name = override or DEFAULTS.get(role)
+def get_model_for_role(role: str, override: Optional[str] = None) -> Tuple[Any, str]:
+    """Return (llm_client, model_name) for the given agent role."""
+    model_name = override or _defaults().get(role)
     if not model_name:
         raise ValueError(f"Unknown agent role: {role!r}")
 
     provider = _provider_from_model(model_name)
-    logger.info("Creating LLM client: role=%s  model=%s  provider=%s", role, model_name, provider)
+    logger.info("LLM client: role=%s model=%s provider=%s", role, model_name, provider)
+
+    if provider == "groq":
+        from langchain_openai import ChatOpenAI
+        key = os.environ.get("GROQ_API_KEY", "")
+        if not key:
+            raise RuntimeError("GROQ_API_KEY is not set. Add it to backend/.env")
+        return ChatOpenAI(
+            model=model_name.replace("groq:", ""),
+            api_key=key,
+            base_url="https://api.groq.com/openai/v1",
+            max_tokens=4096,
+            timeout=120,
+        ), model_name
 
     if provider == "nvidia":
-        # NVIDIA NIM — OpenAI-compatible endpoint
-        # Each model has its own API key stored separately
-        actual_model = model_name.replace("nvidia:", "")
-        # Pick the right key based on model
-        if "ultra" in actual_model or "550b" in actual_model:
-            api_key = os.environ.get("NVIDIA_API_KEY_ULTRA", "")
-        elif "glm" in actual_model or "z-ai" in actual_model:
-            api_key = os.environ.get("NVIDIA_API_KEY_REASON", "")
-        else:
-            api_key = os.environ.get("NVIDIA_API_KEY_FAST", "")
         from langchain_openai import ChatOpenAI
+        actual = model_name.replace("nvidia:", "")
+        if "ultra" in actual or "550b" in actual:
+            key = os.environ.get("NVIDIA_API_KEY_ULTRA", "")
+        elif "glm" in actual or "z-ai" in actual:
+            key = os.environ.get("NVIDIA_API_KEY_REASON", "")
+        else:
+            key = os.environ.get("NVIDIA_API_KEY_FAST", "")
+        if not key:
+            raise RuntimeError(f"NVIDIA API key not set for model {actual}")
         return ChatOpenAI(
-            model=actual_model,
-            api_key=api_key,
+            model=actual,
+            api_key=key,
             base_url="https://integrate.api.nvidia.com/v1",
             max_tokens=4096,
             timeout=120,
@@ -145,39 +159,6 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Any:
             timeout=120,
         ), model_name
 
-    if provider == "xai":
-        # xAI Grok via OpenAI-compatible API
-        from langchain_openai import ChatOpenAI
-        return ChatOpenAI(
-            model=model_name,
-            api_key=os.environ.get("XAI_API_KEY", ""),
-            base_url="https://api.x.ai/v1",
-            max_tokens=4096,
-            timeout=120,
-        ), model_name
-
-    if provider == "zai":
-        # Z.ai (ZhipuAI international) via OpenAI-compatible API
-        from langchain_openai import ChatOpenAI
-        return ChatOpenAI(
-            model=model_name,
-            api_key=os.environ.get("ZAI_API_KEY", ""),
-            base_url="https://api.z.ai/api/paas/v4",
-            max_tokens=4096,
-            timeout=120,
-        ), model_name
-
-    if provider == "groq":
-        # Groq's free tier — OpenAI-compatible endpoint, fast, generous daily limit
-        from langchain_openai import ChatOpenAI
-        return ChatOpenAI(
-            model=model_name.replace("groq:", ""),
-            api_key=os.environ.get("GROQ_API_KEY", ""),
-            base_url="https://api.groq.com/openai/v1",
-            max_tokens=4096,
-            timeout=120,
-        ), model_name
-
     if provider == "ollama":
         return _SimpleOllamaClient(
             model=model_name.replace("ollama:", ""),
@@ -185,9 +166,6 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Any:
         ), model_name
 
     if provider == "freellm":
-        # freellmapi (or any self-hosted OpenAI-compatible free-tier aggregator).
-        # Set FREELLM_BASE_URL to wherever the proxy is running, e.g.
-        # http://localhost:8000/v1 for a locally-run freellmapi instance.
         from langchain_openai import ChatOpenAI
         return ChatOpenAI(
             model=model_name.replace("freellm:", ""),
@@ -200,63 +178,42 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Any:
     raise ValueError(f"Unsupported provider: {provider!r}")
 
 
+# ── Ollama fallback client ─────────────────────────────────────────────────────
+
 class _SimpleOllamaResponse:
-    """Mimics the .content attribute LangChain chat responses have."""
     def __init__(self, content: str):
         self.content = content
 
 
 class _SimpleOllamaClient:
-    """
-    Minimal drop-in replacement for a LangChain ChatModel, backed directly by
-    the `ollama` python package (no langchain-ollama / langchain-core bump
-    required, so it won't conflict with the other providers' pinned versions).
-
-    Only implements what orchestrator.py actually calls: .invoke(messages)
-    where messages is a list of langchain_core SystemMessage/HumanMessage.
-    """
     def __init__(self, model: str, base_url: str):
         self.model = model
         self.base_url = base_url
 
     def invoke(self, messages) -> _SimpleOllamaResponse:
         import ollama
-
         client = ollama.Client(host=self.base_url)
-
         ollama_messages = []
         for m in messages:
             role = "system" if m.__class__.__name__ == "SystemMessage" else "user"
             ollama_messages.append({"role": role, "content": m.content})
-
         response = client.chat(model=self.model, messages=ollama_messages)
         return _SimpleOllamaResponse(response["message"]["content"])
 
 
-# Public alias — orchestrator.py uses this to decide whether a role's model
-# supports tool-calling (bind_tools) before attempting the agentic RAG loop.
+# Public aliases used by orchestrator.py
 provider_from_model = _provider_from_model
 
 
 def get_model_for_role_with_fallback(role: str, override: Optional[str] = None) -> tuple:
-    """
-    Same as get_model_for_role(), but if the assigned/override model's client
-    construction fails outright (e.g. missing key) it walks FALLBACK_CHAIN and
-    returns the first one that constructs successfully. This does NOT catch
-    failures during actual .invoke() calls (that's handled by the retry logic
-    in orchestrator.py) — it only protects against a role being configured for
-    a provider you don't actually have a working key for.
-    """
-    candidates = [override or DEFAULTS.get(role)] + FALLBACK_CHAIN
+    candidates = [override or _defaults().get(role)] + FALLBACK_CHAIN
     last_exc: Optional[Exception] = None
     for candidate in candidates:
         if not candidate:
             continue
         try:
-            llm, model_name = get_model_for_role(role, candidate)
-            return llm, model_name
+            return get_model_for_role(role, candidate)
         except Exception as exc:
             last_exc = exc
-            logger.warning("Model candidate %r failed to construct for role=%s: %s", candidate, role, exc)
-            continue
-    raise RuntimeError(f"No working model found for role={role} after trying {candidates}") from last_exc
+            logger.warning("Model %r failed for role=%s: %s", candidate, role, exc)
+    raise RuntimeError(f"No working model for role={role}") from last_exc

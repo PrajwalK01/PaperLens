@@ -65,7 +65,7 @@ export default function Home() {
           </span>
         </h1>
         <p className="text-xs text-indigo-300/50 max-w-xs mx-auto leading-relaxed">
-          5 independent AI agents review your paper in parallel and deliver a structured verdict in minutes.
+          PaperAI — 5 independent AI agents review your paper in parallel and deliver a structured verdict in minutes.
         </p>
 
         <div className="flex items-center justify-center gap-1.5 mt-3 flex-wrap">

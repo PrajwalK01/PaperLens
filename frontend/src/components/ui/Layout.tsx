@@ -198,21 +198,35 @@ export default function Layout() {
 
 // ── AI Chat Panel ─────────────────────────────────────────────────────────────
 function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => void }) {
-  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const storageKey = `paperai_chat_${jobId || 'general'}`;
+  const [messages, setMessages] = useState<ChatMsg[]>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [input, setInput]       = useState('');
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState('');
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Greet on first load / when paper context changes
+  // Persist messages to localStorage on change
   useEffect(() => {
-    setMessages([{
-      role: 'assistant',
-      content: jobId
-        ? "I can see the paper you're reviewing. Ask me anything — methodology, equations, related work, critique, or a plain-English summary."
-        : "Hi! I'm your PaperLens research assistant. Upload or open a paper, then I can answer questions about it. Or ask me general research questions.",
-    }]);
+    try { localStorage.setItem(storageKey, JSON.stringify(messages)); } catch {}
+  }, [messages, storageKey]);
+
+  // Greet only if no saved messages
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (!saved || JSON.parse(saved).length === 0) {
+      setMessages([{
+        role: 'assistant',
+        content: jobId
+          ? "I can see the paper you're reviewing. Ask me anything — methodology, equations, related work, critique, or a plain-English summary."
+          : "Hi! I'm your PaperAI research assistant. Upload or open a paper, then I can answer questions about it. Or ask me general research questions.",
+      }]);
+    }
   }, [jobId]);
 
   useEffect(() => {
@@ -256,7 +270,11 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
   };
 
   const stop = () => { abortRef.current?.abort(); setStreaming(false); setStreamText(''); };
-  const clear = () => { setMessages([]); stop(); };
+  const clear = () => {
+    try { localStorage.removeItem(storageKey); } catch {}
+    setMessages([]);
+    stop();
+  };
 
   const SUGGESTIONS = jobId
     ? ['Summarise this paper', 'Explain the methodology', 'What are the key weaknesses?', 'Find related work']
@@ -277,7 +295,6 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
           </div>
           <div>
             <p className="text-sm font-bold text-white">Research Assistant</p>
-            {jobId && <p className="text-[10px] text-indigo-400 font-medium">Paper context loaded</p>}
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -413,7 +430,7 @@ function TopNav({ user, showUserMenu, onToggleUserMenu,
         </div>
         <div className="flex flex-col leading-none">
           <span className="font-extrabold text-white text-[15px] tracking-tight group-hover:text-indigo-300 transition-colors">
-            Paper<span style={{ background: 'linear-gradient(90deg,#818cf8,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Lens</span>
+            Paper<span style={{ background: 'linear-gradient(90deg,#818cf8,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AI</span>
           </span>
           <span className="text-[9px] text-zinc-600 font-medium tracking-widest uppercase">AI Peer Review</span>
         </div>

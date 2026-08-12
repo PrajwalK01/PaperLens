@@ -149,7 +149,7 @@ export default function AuthModal({ isOpen, initialTab = 'login', onClose, onSuc
     otp: 'Verify your email',
   };
   const tabSub: Record<string, string> = {
-    login: 'Sign in to your PaperLens account',
+    login: 'Sign in to your PaperAI account',
     register: 'Start reviewing papers with AI',
     otp: `Enter the 6-digit code sent to ${email}`,
   };

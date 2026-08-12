@@ -21,8 +21,8 @@ def send_otp_email(email_to: str, otp: str) -> bool:
     resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
     resend_from = os.getenv("RESEND_FROM_EMAIL", "PaperLens <onboarding@resend.dev>").strip()
 
-    subject = "PaperLens — Your Verification Code"
-    body_text = f"Your PaperLens verification code is: {otp}\nThis code expires in 10 minutes."
+    subject = "PaperAI — Your Verification Code"
+    body_text = f"Your PaperAI verification code is: {otp}\nThis code expires in 10 minutes."
     body_html = f"""
     <html>
       <head></head>
@@ -41,7 +41,7 @@ def send_otp_email(email_to: str, otp: str) -> bool:
                                 font-size:18px;font-weight:900;color:#fff;line-height:1;">
                       P<span style="color:rgba(255,255,255,0.6);">L</span>
                     </div>
-                    <span style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.03em;">PaperLens</span>
+                    <span style="font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.03em;">Paper<span style="color:rgba(255,255,255,0.7);">AI</span></span>
                   </div>
                 </td>
               </tr>
@@ -69,7 +69,7 @@ def send_otp_email(email_to: str, otp: str) -> bool:
               <tr>
                 <td style="padding:20px 40px;background:#f8fafc;border-top:1px solid #f1f5f9;text-align:center;">
                   <p style="margin:0;font-size:11px;color:#cbd5e1;">
-                    PaperLens Research Platform &nbsp;·&nbsp; AI-Powered Peer Review
+                    PaperAI Research Platform &nbsp;·&nbsp; AI-Powered Peer Review
                   </p>
                 </td>
               </tr>
