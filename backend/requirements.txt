@@ -1,5 +1,4 @@
 # PaperLens backend dependencies
-# Pin major versions for reproducibility
 
 # Web framework
 fastapi==0.111.1
@@ -9,37 +8,35 @@ python-multipart==0.0.9
 
 # Database
 sqlalchemy==2.0.31
-psycopg2-binary==2.9.9          # for PostgreSQL; unused in SQLite mode
+psycopg2-binary==2.9.9
 
-# LangChain / LangGraph
-langchain==0.2.11
-langchain-core>=0.2.24
-langgraph==0.1.19
-langchain-anthropic==0.1.20
-langchain-openai==0.1.17
-langchain-google-genai==1.0.7
-langchain-mistralai==0.1.11
+# LangChain / LangGraph — all pinned to compatible 0.3.x series
+langchain>=0.3.0,<0.4.0
+langchain-core>=0.3.0,<0.4.0
+langchain-text-splitters>=0.3.0,<0.4.0
+langgraph>=0.2.0,<0.3.0
+msgpack>=1.0.8
+langchain-anthropic>=0.2.0,<0.4.0
+langchain-openai>=0.2.0,<0.4.0
+langchain-google-genai>=2.0.0,<3.0.0
+langchain-mistralai>=0.2.0,<0.4.0
+langchain-groq>=0.2.0,<0.4.0
+langsmith>=0.1.17,<0.3.0
 
 # PDF parsing
 PyMuPDF==1.24.7
 pdfplumber==0.11.2
 
-# HTTP client (arXiv fetcher)
+# HTTP client
 httpx==0.27.0
 
 # Utilities
 python-dotenv==1.0.1
 tenacity==8.4.2
 
-# Agentic RAG: chunking + vector store (foundation layer)
+# Vector store + embeddings
 chromadb==0.5.5
 sentence-transformers==3.0.1
-langchain-text-splitters==0.2.2
-
-# CNN figure analysis
-torch==2.3.1
-torchvision==0.18.1
-Pillow==10.4.0
 
 # Auth
 pyjwt==2.8.0
@@ -49,11 +46,8 @@ bcrypt==4.1.2
 # Local model support
 ollama==0.3.0
 
-# Evaluation framework
-matplotlib==3.9.0
+# Rate limiting
+slowapi==0.1.9
 
 # Testing
 pytest==8.2.2
-
-# Rate limiting
-slowapi==0.1.9

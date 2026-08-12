@@ -33,10 +33,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Production frontend URL is read from an env var so a deployed instance
 # doesn't need code changes — just set FRONTEND_URL when you deploy.
 _allowed_origins = [
-    "http://localhost:5173",      # Vite dev server
-    "http://localhost:3000",      # Alternative frontend port
-    "http://frontend:5173",       # Docker service name
-    "http://127.0.0.1:5173",      # Localhost alternative
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://frontend:5173",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
 ]
 # Additional origins from env — FRONTEND_URL supports space-separated list
 # e.g. FRONTEND_URL="https://paper-lens-liart.vercel.app https://myapp.com"

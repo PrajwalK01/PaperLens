@@ -129,7 +129,7 @@ export default function Layout() {
                 <SideNavLink to="/" label="Home" icon={<Home size={14} />} current={location.pathname} />
                 <SideNavLink to="/dashboard" label="Dashboard" icon={<LayoutDashboard size={14} />} current={location.pathname} />
                 <SideNavLink to="/history" label="Review History" icon={<History size={14} />} current={location.pathname} />
-                {user?.is_admin && <SideNavLink to="/admin" label="Admin" icon={<ShieldCheck size={14} />} current={location.pathname} />}
+                {user?.is_admin && <SideNavLink to="/admin" label="Control Center" icon={<ShieldCheck size={14} />} current={location.pathname} />}
               </nav>
               <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
                 {!getToken() ? (
@@ -471,7 +471,7 @@ function TopNav({ user, showUserMenu, onToggleUserMenu,
                   <Link to="/admin"
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-indigo-200/70 hover:bg-indigo-500/10 hover:text-indigo-200 transition-colors"
                     onClick={onCloseUserMenu}>
-                    <ShieldCheck size={14} /> Admin Dashboard
+                    <ShieldCheck size={14} /> Control Center
                   </Link>
                 )}
                 <div style={{ borderTop: '1px solid rgba(99,102,241,0.12)' }} />
