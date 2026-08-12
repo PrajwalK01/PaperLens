@@ -67,6 +67,9 @@ RETRY_DELAY = 1         # reduced from 3 — quick retry, not a long sleep
 AGENTIC_RAG_ENABLED = os.getenv("AGENTIC_RAG_ENABLED", "true").lower() == "true"
 INDEPENDENT_AGENTS_MODE = os.getenv("INDEPENDENT_AGENTS_MODE", "false").lower() == "true"
 
+def _agentic_rag_enabled():
+    return os.getenv("AGENTIC_RAG_ENABLED", "true").lower() == "true"
+
 
 # ── LangGraph state ────────────────────────────────────────────────────────────
 
@@ -87,7 +90,7 @@ class PaperLensState(TypedDict):
     group_b_critic: Optional[Dict[str, Any]]
     final_review: Optional[Dict[str, Any]]
 
-    retrieval_traces: Dict[str, List[dict]]
+    retrieval_traces: Annotated[Dict[str, List[dict]], lambda a, b: {**a, **b}]
     errors: Annotated[List[str], operator.add]
     _db_callback: Any
 
@@ -177,7 +180,7 @@ def _resolve_path(state: "PaperLensState", role: str, override: Optional[str]) -
       "simple_rag"  — retrieval done upfront, single call (Ollama — no bind_tools support)
       "plain_text"  — original full-text-in-prompt behavior (AGENTIC_RAG_ENABLED=false, or paper not indexed)
     """
-    if not (AGENTIC_RAG_ENABLED and _paper_indexed(state["paper_id"])):
+    if not (_agentic_rag_enabled() and _paper_indexed(state["paper_id"])):
         return "plain_text"
     model_name = override or DEFAULTS.get(role)
     provider = provider_from_model(model_name) if model_name else None
