@@ -69,23 +69,25 @@ export default function AdminDashboard() {
       {/* Metric cards */}
       <div className="grid grid-cols-6 gap-3">
         {[
-          { icon: <Activity size={18} />, label: 'Total Reviews',  value: stats.total_reviews,   color: '#818cf8' },
-          { icon: <Users size={18} />,    label: 'Total Users',    value: stats.total_users,     color: '#60a5fa' },
-          { icon: <BarChart3 size={18} />, label: 'Avg Score',     value: stats.average_score,   color: '#6ee7b7' },
-          { icon: <CheckCircle size={18} />, label: 'Completed',   value: stats.completed_reviews, color: '#34d399' },
-          { icon: <ShieldAlert size={18} />, label: 'Failed',      value: stats.failed_reviews,  color: stats.failed_reviews > 0 ? '#fca5a5' : '#6ee7b7' },
-          { icon: <Clock size={18} />,    label: 'Processing',     value: stats.processing_reviews, color: '#a78bfa' },
+          { icon: <Activity size={18} />, label: 'Total Reviews',  value: stats.total_reviews,    color: '#818cf8' },
+          { icon: <Users size={18} />,    label: 'Total Users',    value: stats.total_users,      color: '#60a5fa' },
+          { icon: <BarChart3 size={18} />,label: 'Avg Score',      value: stats.average_score,    color: '#6ee7b7' },
+          { icon: <CheckCircle size={18} />,label: 'Completed',    value: stats.completed_reviews,color: '#34d399' },
+          { icon: <ShieldAlert size={18} />,label: 'Failed',       value: stats.failed_reviews,   color: stats.failed_reviews > 0 ? '#fca5a5' : '#6ee7b7' },
+          { icon: <Clock size={18} />,    label: 'Processing',     value: stats.processing_reviews,color: '#a78bfa' },
         ].map((m, i) => (
-          <div key={i} className="rounded-2xl p-4 transition-all hover:scale-[1.02] animate-fade-in"
+          <div key={i} className="rounded-2xl p-4 flex flex-col gap-3 transition-all hover:scale-[1.02] animate-fade-in"
             style={{ ...CARD, animationDelay: `${i * 0.05}s` }}>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: m.color + '18', border: `1px solid ${m.color}30`, color: m.color }}>
-                {m.icon}
-              </div>
-              <span className="text-[11px] font-semibold leading-tight" style={{ color: 'rgba(165,180,252,0.6)' }}>{m.label}</span>
+            {/* Icon */}
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: m.color + '18', border: `1px solid ${m.color}28`, color: m.color }}>
+              {m.icon}
             </div>
-            <p className="text-2xl font-bold text-white">{m.value}</p>
+            {/* Value */}
+            <div>
+              <p className="text-3xl font-black text-white leading-none mb-1.5">{m.value}</p>
+              <p className="text-[11px] font-semibold" style={{ color: 'rgba(165,180,252,0.5)' }}>{m.label}</p>
+            </div>
           </div>
         ))}
       </div>

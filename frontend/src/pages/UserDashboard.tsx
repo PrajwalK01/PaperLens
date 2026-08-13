@@ -141,18 +141,16 @@ export default function UserDashboard() {
             { icon: <Users size={20} />,    color: '#6ee7b7', value: stats?.completed_reviews ?? 0, label: 'Completed', sub: 'AI review cycles' },
             { icon: <Star size={20} />,     color: '#fbbf24', value: stats?.average_score ?? '—', label: 'Avg Score', sub: 'out of 10.0' },
           ].map((s, i) => (
-            <div key={i} className="rounded-2xl p-5 transition-all hover:scale-[1.02] animate-fade-in"
+            <div key={i} className="rounded-2xl p-5 flex flex-col gap-3 transition-all hover:scale-[1.02] animate-fade-in"
               style={{ ...CARD, animationDelay: `${i * 0.06}s` }}>
-              <div className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: s.color + '18', border: `1px solid ${s.color}30`, color: s.color }}>
-                  {s.icon}
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-white leading-none mb-1">{s.value}</p>
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: 'rgba(165,180,252,0.7)' }}>{s.label}</p>
-                  <p className="text-[11px]" style={{ color: s.color + 'a0' }}>{s.sub}</p>
-                </div>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: s.color + '18', border: `1px solid ${s.color}28`, color: s.color }}>
+                {s.icon}
+              </div>
+              <div>
+                <p className="text-3xl font-black text-white leading-none mb-1">{s.value}</p>
+                <p className="text-xs font-semibold mb-0.5" style={{ color: 'rgba(165,180,252,0.6)' }}>{s.label}</p>
+                <p className="text-[11px]" style={{ color: s.color + '90' }}>{s.sub}</p>
               </div>
             </div>
           ))}
