@@ -98,10 +98,9 @@ class AgentResponseOut(BaseModel):
     error_message: Optional[str]
     created_at: datetime
 
-    model_config = {'protected_namespaces': ()}
-
     class Config:
         from_attributes = True
+        protected_namespaces = ()
 
 
 class ReviewJobOut(BaseModel):
