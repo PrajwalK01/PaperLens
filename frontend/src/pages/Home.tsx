@@ -37,6 +37,8 @@ export default function Home() {
       }
       setLoadingMsg('Starting review pipeline…')
       const job = await startReview(paper.id)
+      // Notify chat panel about the uploaded paper so it can access it
+      window.dispatchEvent(new CustomEvent('paperai:paper_uploaded', { detail: { paperId: paper.id } }))
       navigate(`/review/${job.id}`)
     } catch (e: unknown) {
       const d = (e as any)?.response?.data?.detail

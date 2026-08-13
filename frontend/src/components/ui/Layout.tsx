@@ -99,9 +99,26 @@ export default function Layout() {
 
   const initials = user?.username ? user.username.slice(0, 2).toUpperCase() : '?';
 
-  // Extract paper_id and job_id from route for chat context
+  // Extract job_id from review page; also check localStorage for last uploaded paper
   const jobIdMatch = location.pathname.match(/\/review\/([^/]+)/);
   const chatJobId = jobIdMatch?.[1] ?? null;
+
+  // Get paper_id: from review job's paper, or from last uploaded paper stored in localStorage
+  const [lastPaperId, setLastPaperId] = React.useState<string | null>(
+    () => localStorage.getItem('paperai_last_paper_id')
+  );
+
+  // Listen for paper uploads via custom event
+  React.useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      if (e.detail?.paperId) {
+        localStorage.setItem('paperai_last_paper_id', e.detail.paperId);
+        setLastPaperId(e.detail.paperId);
+      }
+    };
+    window.addEventListener('paperai:paper_uploaded', handler as EventListener);
+    return () => window.removeEventListener('paperai:paper_uploaded', handler as EventListener);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, refresh: refreshUser, openAuth }}>
@@ -175,7 +192,7 @@ export default function Layout() {
 
             {/* RIGHT: AI Chat Panel */}
             {chatOpen && (
-              <AIChatPanel jobId={chatJobId} onClose={() => setChatOpen(false)} />
+              <AIChatPanel jobId={chatJobId} paperId={lastPaperId} onClose={() => setChatOpen(false)} />
             )}
           </div>
 
@@ -197,8 +214,9 @@ export default function Layout() {
 }
 
 // ── AI Chat Panel ─────────────────────────────────────────────────────────────
-function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => void }) {
-  const storageKey = `paperai_chat_${jobId || 'general'}`;
+function AIChatPanel({ jobId, paperId, onClose }: { jobId: string | null; paperId: string | null; onClose: () => void }) {
+  const storageKey = `paperai_chat_${jobId || paperId || 'general'}`;
+  const hasPaperContext = !!(jobId || paperId);
   const [messages, setMessages] = useState<ChatMsg[]>(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -222,12 +240,12 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
     if (!saved || JSON.parse(saved).length === 0) {
       setMessages([{
         role: 'assistant',
-        content: jobId
-          ? "I can see the paper you're reviewing. Ask me anything — methodology, equations, related work, critique, or a plain-English summary."
-          : "Hi! I'm your PaperAI research assistant. Upload or open a paper, then I can answer questions about it. Or ask me general research questions.",
+        content: hasPaperContext
+          ? "I can see the paper you uploaded. Ask me anything — methodology, key findings, equations, related work, or get a plain-English summary."
+          : "Hi! I'm your PaperAI research assistant. Upload a paper first, then I can answer detailed questions about it. Or ask me general research questions.",
       }]);
     }
-  }, [jobId]);
+  }, [jobId, paperId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -246,7 +264,7 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
 
     let accumulated = '';
     abortRef.current = streamChat(
-      text, newHistory.slice(-10), null, jobId,
+      text, newHistory.slice(-10), paperId, jobId,
       (token) => { accumulated += token; setStreamText(accumulated); },
       () => {
         setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
@@ -276,8 +294,8 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
     stop();
   };
 
-  const SUGGESTIONS = jobId
-    ? ['Summarise this paper', 'Explain the methodology', 'What are the key weaknesses?', 'Find related work']
+  const SUGGESTIONS = hasPaperContext
+    ? ['Summarise this paper', 'Explain the methodology', 'What are the key findings?', 'What are the weaknesses?']
     : ['What makes a good paper?', 'Explain peer review', 'How does LangGraph work?'];
 
   return (
@@ -295,6 +313,7 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
           </div>
           <div>
             <p className="text-sm font-bold text-white">Research Assistant</p>
+            {hasPaperContext && <p className="text-[10px] text-indigo-400 font-medium">Paper context loaded</p>}
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -380,7 +399,7 @@ function AIChatPanel({ jobId, onClose }: { jobId: string | null; onClose: () => 
           </div>
         </div>
         <p className="text-[10px] text-indigo-400/30 text-center mt-2">
-          {jobId ? '📄 Paper context active' : 'General research mode'} · Enter to send
+          {hasPaperContext ? '📄 Paper context active' : 'Upload a paper for full context'} · Enter to send
         </p>
       </div>
     </aside>

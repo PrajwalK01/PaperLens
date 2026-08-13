@@ -1,7 +1,13 @@
 import os
+import warnings
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
+
+# Suppress passlib/bcrypt version detection warning (cosmetic only, not a bug)
+warnings.filterwarnings("ignore", message=".*error reading bcrypt version.*")
+warnings.filterwarnings("ignore", message=".*trapped.*error reading bcrypt.*")
+
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 
