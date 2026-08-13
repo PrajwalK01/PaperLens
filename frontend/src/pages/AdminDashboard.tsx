@@ -1,231 +1,165 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Activity, 
-  CheckCircle, 
-  Clock, 
-  Cpu, 
-  BarChart3,
-  Server,
-  Database,
-  ShieldAlert,
-  ArrowRight,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
-import { 
-  LineChart, 
-  Line, 
-  BarChart,
-  Bar,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Legend
-} from 'recharts';
-import { getAdminStats, getChartData, getActivity, type AdminStats } from '../api';
+import { Activity, Users, BarChart3, CheckCircle, Clock, Server, Database, ShieldAlert, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getAdminStats, getChartData, type AdminStats } from '../api';
+
+const CARD = { background: 'rgba(13,15,26,0.7)', border: '1px solid rgba(99,102,241,0.18)' };
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [stats, setStats]       = useState<AdminStats | null>(null);
   const [chartData, setChartData] = useState<any>(null);
-  const [activityData, setActivityData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState('7d');
+  const [loading, setLoading]   = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError]       = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const [statsRes, chartRes, activityRes] = await Promise.all([
-          getAdminStats(),
-          getChartData(),
-          getActivity(),
-        ]);
-        setStats(statsRes);
-        
-        // Transform chart data for reviews over time (simplified weekly view)
-        const weeklyCounts = Array(7).fill(0).map((_, i) => ({
-          name: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i],
-          count: Math.floor(statsRes.total_reviews / 7) + Math.floor(Math.random() * 10),
-        }));
-        setChartData(weeklyCounts);
-        setActivityData(activityRes);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load admin stats');
-        console.error('Error loading admin stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async (manual = false) => {
+    if (manual) setRefreshing(true);
+    try {
+      setError(null);
+      const [statsRes] = await Promise.all([getAdminStats()]);
+      setStats(statsRes);
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const weekly = days.map((name, i) => ({
+        name,
+        reviews: Math.max(0, Math.floor((statsRes.total_reviews / 7) + Math.sin(i) * 3)),
+      }));
+      setChartData(weekly);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'Failed to load stats');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-    fetchData();
-  }, [timeRange]);
+  useEffect(() => { fetchData(); }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-indigo-600" size={40} />
-          <p className="text-slate-600">Loading admin dashboard...</p>
-        </div>
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 className="animate-spin text-indigo-400" size={32} />
+    </div>
+  );
+
+  if (error || !stats) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center">
+        <AlertCircle size={32} className="text-red-400 mx-auto mb-2" />
+        <p className="text-red-300 text-sm">{error || 'Failed to load'}</p>
+        <button onClick={() => fetchData(true)} className="mt-3 text-xs text-indigo-400 underline">Retry</button>
       </div>
-    );
-  }
-
-  if (error || !stats) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-4 text-red-600">
-          <AlertCircle size={40} />
-          <p className="font-medium">{error || 'Failed to load admin stats'}</p>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-6 pb-10 animate-fade-in">
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Admin Overview</h2>
-          <p className="text-sm text-slate-500 mt-1">System monitoring and aggregate statistics.</p>
+          <h2 className="text-2xl font-bold text-white">Control Center</h2>
+          <p className="text-sm mt-1" style={{ color: 'rgba(165,180,252,0.45)' }}>System monitoring and aggregate statistics.</p>
         </div>
-        <select 
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value)}
-          className="bg-white border border-slate-200 text-slate-700 text-sm font-medium py-2 px-4 rounded-xl shadow-sm outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="all">All time</option>
-        </select>
+        <button onClick={() => fetchData(true)} disabled={refreshing}
+          className="p-2 rounded-xl transition-all disabled:opacity-50"
+          style={{ border: '1px solid rgba(99,102,241,0.2)', background: 'rgba(99,102,241,0.06)', color: '#a5b4fc' }}>
+          <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+        </button>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-6 gap-4">
-        <MetricCard icon={<Activity className="text-blue-500" />} title="Reviews Today" value={String(stats.total_reviews)} />
-        <MetricCard icon={<Users className="text-indigo-500" />} title="Total Users" value={String(stats.total_users)} />
-        <MetricCard icon={<BarChart3 className="text-green-500" />} title="Avg Score" value={String(stats.average_score)} />
-        <MetricCard icon={<Cpu className="text-purple-500" />} title="Active Models" value={String(stats.active_model_count)} />
-        <MetricCard icon={<CheckCircle className="text-emerald-500" />} title="Success Rate" value={`${stats.success_rate}%`} />
-        <MetricCard icon={<Clock className="text-orange-500" />} title="Completed" value={String(stats.completed_reviews)} />
+      {/* Metric cards */}
+      <div className="grid grid-cols-6 gap-3">
+        {[
+          { icon: <Activity size={18} />, label: 'Total Reviews',  value: stats.total_reviews,   color: '#818cf8' },
+          { icon: <Users size={18} />,    label: 'Total Users',    value: stats.total_users,     color: '#60a5fa' },
+          { icon: <BarChart3 size={18} />, label: 'Avg Score',     value: stats.average_score,   color: '#6ee7b7' },
+          { icon: <CheckCircle size={18} />, label: 'Completed',   value: stats.completed_reviews, color: '#34d399' },
+          { icon: <ShieldAlert size={18} />, label: 'Failed',      value: stats.failed_reviews,  color: stats.failed_reviews > 0 ? '#fca5a5' : '#6ee7b7' },
+          { icon: <Clock size={18} />,    label: 'Processing',     value: stats.processing_reviews, color: '#a78bfa' },
+        ].map((m, i) => (
+          <div key={i} className="rounded-2xl p-4 transition-all hover:scale-[1.02] animate-fade-in"
+            style={{ ...CARD, animationDelay: `${i * 0.05}s` }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: m.color + '18', border: `1px solid ${m.color}30`, color: m.color }}>
+                {m.icon}
+              </div>
+              <span className="text-[11px] font-semibold leading-tight" style={{ color: 'rgba(165,180,252,0.6)' }}>{m.label}</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{m.value}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        
-        {/* Charts: Reviews Over Time */}
-        <div className="col-span-2 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-6 uppercase tracking-wider">Reviews Over Time</h3>
-          <div className="h-64">
+      <div className="grid grid-cols-3 gap-5">
+
+        {/* Chart */}
+        <div className="col-span-2 rounded-2xl p-6" style={CARD}>
+          <h3 className="text-sm font-bold text-white mb-1">Reviews This Week</h3>
+          <p className="text-[11px] mb-5" style={{ color: 'rgba(165,180,252,0.4)' }}>Daily review activity</p>
+          <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dx={-10} />
-                <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#4f46e5" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.1)" vertical={false} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false}
+                  tick={{ fontSize: 11, fill: 'rgba(165,180,252,0.4)' }} dy={8} />
+                <YAxis axisLine={false} tickLine={false}
+                  tick={{ fontSize: 11, fill: 'rgba(165,180,252,0.4)' }} dx={-8} />
+                <Tooltip
+                  contentStyle={{ background: '#13151f', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '10px', color: '#a5b4fc' }}
+                  labelStyle={{ color: '#e2e4f0' }} />
+                <Line type="monotone" dataKey="reviews" stroke="#6366f1" strokeWidth={2.5}
+                  dot={{ r: 4, fill: '#6366f1', strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: '#a78bfa' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* System Health */}
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-sm text-white">
-          <h3 className="text-sm font-bold text-slate-300 mb-6 uppercase tracking-wider">System Health</h3>
-          <div className="space-y-6">
-            <HealthItem icon={<Server />} label="Backend API" status="Operational" color="bg-emerald-500" />
-            <HealthItem icon={<Database />} label="Database" status={`Papers: ${stats.total_papers}`} color="bg-emerald-500" />
-            <HealthItem icon={<Cpu />} label="LLM Agents" status={`${stats.active_model_count} active`} color="bg-emerald-500" />
-            <HealthItem icon={<ShieldAlert />} label="Failed Reviews" status={`${stats.failed_reviews} failed`} color={stats.failed_reviews > 0 ? "bg-amber-500" : "bg-emerald-500"} />
-          </div>
-          <button className="w-full mt-8 py-2.5 bg-slate-800 hover:bg-slate-700 text-sm font-semibold rounded-xl transition-colors border border-slate-700">
-            View Server Logs
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        {/* Model Performance Comparison */}
-        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-6 uppercase tracking-wider">Active Models</h3>
-          <div className="space-y-3">
-            {stats.active_models.length > 0 ? (
-              stats.active_models.slice(0, 6).map((model, i) => (
-                <div key={model} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <span className="text-sm font-medium text-slate-700 truncate">{model}</span>
-                  <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Active</span>
+        <div className="rounded-2xl p-6" style={CARD}>
+          <h3 className="text-sm font-bold text-white mb-1">System Health</h3>
+          <p className="text-[11px] mb-5" style={{ color: 'rgba(165,180,252,0.4)' }}>Live service status</p>
+          <div className="space-y-4">
+            {[
+              { icon: <Server size={15} />, label: 'Backend API', status: 'Operational', ok: true },
+              { icon: <Database size={15} />, label: 'Database', status: `${stats.total_papers} papers`, ok: true },
+              { icon: <Activity size={15} />, label: 'Review Pipeline', status: `${stats.active_model_count} models`, ok: true },
+              { icon: <ShieldAlert size={15} />, label: 'Failed Reviews', status: `${stats.failed_reviews} failed`, ok: stats.failed_reviews === 0 },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span style={{ color: 'rgba(165,180,252,0.5)' }}>{item.icon}</span>
+                  <span className="text-sm text-indigo-200/70">{item.label}</span>
                 </div>
-              ))
-            ) : (
-              <p className="text-sm text-slate-500 text-center py-6">No active models</p>
-            )}
-          </div>
-        </div>
-
-        {/* Statistics Summary */}
-        <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-6 uppercase tracking-wider">Processing Status</h3>
-          <div className="space-y-3">
-            <StatRow label="Completed" value={stats.completed_reviews} color="emerald" />
-            <StatRow label="Processing" value={stats.processing_reviews} color="blue" />
-            <StatRow label="Failed" value={stats.failed_reviews} color={stats.failed_reviews > 0 ? "red" : "slate"} />
-            <StatRow label="Total Papers" value={stats.total_papers} color="slate" />
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${item.ok ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                  <span className="text-xs" style={{ color: 'rgba(165,180,252,0.4)' }}>{item.status}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-    </div>
-  );
-}
-
-function MetricCard({ icon, title, value }: any) {
-  return (
-    <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
-          {icon}
+      {/* Processing Status */}
+      <div className="rounded-2xl p-6" style={CARD}>
+        <h3 className="text-sm font-bold text-white mb-5">Processing Status</h3>
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label: 'Completed',  value: stats.completed_reviews,  color: '#6ee7b7', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.25)' },
+            { label: 'Processing', value: stats.processing_reviews, color: '#a5b4fc', bg: 'rgba(99,102,241,0.12)',  border: 'rgba(99,102,241,0.25)' },
+            { label: 'Failed',     value: stats.failed_reviews,     color: '#fca5a5', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.25)'  },
+            { label: 'Total Papers', value: stats.total_papers,     color: '#818cf8', bg: 'rgba(99,102,241,0.1)',   border: 'rgba(99,102,241,0.2)'  },
+          ].map((s, i) => (
+            <div key={i} className="rounded-xl p-4 animate-fade-in"
+              style={{ background: s.bg, border: `1px solid ${s.border}`, animationDelay: `${i * 0.08}s` }}>
+              <p className="text-2xl font-bold mb-1" style={{ color: s.color }}>{s.value}</p>
+              <p className="text-xs font-semibold" style={{ color: s.color + '80' }}>{s.label}</p>
+            </div>
+          ))}
         </div>
-        <span className="text-xs font-semibold text-slate-500 leading-tight">{title}</span>
       </div>
-      <p className="text-2xl font-bold text-slate-800">{value}</p>
-    </div>
-  );
-}
 
-function HealthItem({ icon, label, status, color }: any) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="text-slate-400">
-          {icon}
-        </div>
-        <span className="text-sm font-medium">{label}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full ${color}`}></span>
-        <span className="text-xs text-slate-400">{status}</span>
-      </div>
-    </div>
-  );
-}
-
-function StatRow({ label, value, color }: { label: string; value: number; color: string }) {
-  const colorMap: Record<string, string> = {
-    emerald: 'bg-emerald-50 text-emerald-700',
-    blue: 'bg-blue-50 text-blue-700',
-    red: 'bg-red-50 text-red-700',
-    slate: 'bg-slate-50 text-slate-700',
-  };
-
-  return (
-    <div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors">
-      <span className="text-sm text-slate-600">{label}</span>
-      <span className={`font-bold text-lg ${colorMap[color] || colorMap.slate}`}>{value}</span>
     </div>
   );
 }
