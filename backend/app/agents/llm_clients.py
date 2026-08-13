@@ -100,8 +100,8 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Tuple[Any, 
             model=model_name.replace("groq:", ""),
             api_key=key,
             base_url="https://api.groq.com/openai/v1",
-            max_tokens=4096,
-            timeout=120,
+            max_tokens=2048,
+            timeout=60,
         ), model_name
 
     if provider == "nvidia":
@@ -119,8 +119,8 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Tuple[Any, 
             model=actual,
             api_key=key,
             base_url="https://integrate.api.nvidia.com/v1",
-            max_tokens=4096,
-            timeout=120,
+            max_tokens=2048,
+            timeout=60,
         ), model_name
 
     if provider == "anthropic":
@@ -128,8 +128,8 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Tuple[Any, 
         return ChatAnthropic(
             model=model_name,
             api_key=os.environ["ANTHROPIC_API_KEY"],
-            max_tokens=4096,
-            timeout=120,
+            max_tokens=2048,
+            timeout=60,
         ), model_name
 
     if provider == "openai":
@@ -137,8 +137,8 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Tuple[Any, 
         return ChatOpenAI(
             model=model_name,
             api_key=os.environ["OPENAI_API_KEY"],
-            max_tokens=4096,
-            timeout=120,
+            max_tokens=2048,
+            timeout=60,
         ), model_name
 
     if provider == "google":
@@ -146,8 +146,8 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Tuple[Any, 
         return ChatGoogleGenerativeAI(
             model=model_name,
             google_api_key=os.environ["GOOGLE_API_KEY"],
-            max_output_tokens=4096,
-            timeout=120,
+            max_output_tokens=2048,
+            timeout=60,
         ), model_name
 
     if provider == "mistral":
@@ -155,8 +155,8 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Tuple[Any, 
         return ChatMistralAI(
             model=model_name,
             api_key=os.environ["MISTRAL_API_KEY"],
-            max_tokens=4096,
-            timeout=120,
+            max_tokens=2048,
+            timeout=60,
         ), model_name
 
     if provider == "ollama":
@@ -171,8 +171,8 @@ def get_model_for_role(role: str, override: Optional[str] = None) -> Tuple[Any, 
             model=model_name.replace("freellm:", ""),
             api_key=os.environ.get("FREELLM_API_KEY", "not-needed"),
             base_url=os.getenv("FREELLM_BASE_URL", "http://localhost:8000/v1"),
-            max_tokens=4096,
-            timeout=120,
+            max_tokens=2048,
+            timeout=60,
         ), model_name
 
     raise ValueError(f"Unsupported provider: {provider!r}")

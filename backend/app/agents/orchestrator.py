@@ -204,10 +204,7 @@ def _make_primary_node(group: str):
     role = f"group_{group.lower()}_primary"
 
     def node(state: PaperLensState) -> dict:
-        # Stagger Group B by 3s so parallel primaries don't hit rate limits together
-        if group == "B":
-            time.sleep(3)
-
+        # No stagger needed - rate limit handled by exponential backoff retries
         override = state["model_config"].get(role)
         system = _system(state)
         path = _resolve_path(state, role, override)
@@ -239,10 +236,10 @@ def _make_primary_node(group: str):
                 traces = dict(state.get("retrieval_traces", {}))
                 traces[role] = trace
             else:
-                # Truncate to ~12000 chars (~3000 tokens) to avoid Groq rate limits
-                truncated_text = state["paper_full_text"][:12000]
-                if len(state["paper_full_text"]) > 12000:
-                    truncated_text += "\n\n[...paper truncated for token limit...]"
+                # Truncate to ~8000 chars (~2000 tokens) for faster responses
+                truncated_text = state["paper_full_text"][:8000]
+                if len(state["paper_full_text"]) > 8000:
+                    truncated_text += "\n\n[...paper truncated for speed...]"
                 human = PRIMARY_REVIEWER_PROMPT.format(
                     group=group, paper_title=state["paper_title"], authors=state["authors"],
                     paper_full_text=truncated_text,
@@ -312,9 +309,9 @@ def _make_critic_node(group: str):
                 traces = dict(state.get("retrieval_traces", {}))
                 traces[role] = trace
             else:
-                truncated_text = state["paper_full_text"][:12000]
-                if len(state["paper_full_text"]) > 12000:
-                    truncated_text += "\n\n[...paper truncated for token limit...]"
+                truncated_text = state["paper_full_text"][:8000]
+                if len(state["paper_full_text"]) > 8000:
+                    truncated_text += "\n\n[...truncated...]"
                 human = CRITIC_REVIEWER_PROMPT.format(
                     group=group, initial_review_json=initial, paper_full_text=truncated_text
                 )
@@ -356,8 +353,8 @@ def node_synthesize(state: PaperLensState) -> dict:
     role = "synthesizer"
     override = state["model_config"].get(role)
     system = _system(state)
-    synth_text = state["paper_full_text"][:8000]
-    if len(state["paper_full_text"]) > 8000:
+    synth_text = state["paper_full_text"][:5000]
+    if len(state["paper_full_text"]) > 5000:
         synth_text += "\n\n[...truncated...]"
     human = SYNTHESIZER_PROMPT.format(
         paper_full_text=synth_text,
