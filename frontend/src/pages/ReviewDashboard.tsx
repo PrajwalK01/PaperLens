@@ -41,7 +41,15 @@ export default function ReviewDashboard() {
   useEffect(() => {
     if (!jobId) return
     getReview(jobId)
-      .then(j => { setJob(j); setLoading(false) })
+      .then(j => {
+        setJob(j)
+        setLoading(false)
+        // Tell chat panel about this paper so it can answer questions about it
+        if (j.paper_id) {
+          localStorage.setItem('spr_last_paper_id', j.paper_id)
+          window.dispatchEvent(new CustomEvent('spr:paper_uploaded', { detail: { paperId: j.paper_id } }))
+        }
+      })
       .catch(e => { setError(e.message); setLoading(false) })
   }, [jobId])
 

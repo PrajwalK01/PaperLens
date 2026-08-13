@@ -234,18 +234,22 @@ function AIChatPanel({ jobId, paperId, onClose }: { jobId: string | null; paperI
     try { localStorage.setItem(storageKey, JSON.stringify(messages)); } catch {}
   }, [messages, storageKey]);
 
-  // Greet only if no saved messages
+  // Greet only if no saved messages — but update greeting if paper context changes
   useEffect(() => {
     const saved = localStorage.getItem(storageKey);
-    if (!saved || JSON.parse(saved).length === 0) {
-      setMessages([{
+    const savedMsgs = saved ? JSON.parse(saved) : [];
+    // If only the greeting message exists (1 assistant msg, no user msgs), replace it
+    const onlyGreeting = savedMsgs.length === 1 && savedMsgs[0].role === 'assistant';
+    if (savedMsgs.length === 0 || onlyGreeting) {
+      const greeting: ChatMsg = {
         role: 'assistant',
         content: hasPaperContext
-          ? "I can see the paper you uploaded. Ask me anything — methodology, key findings, equations, related work, or get a plain-English summary."
+          ? "I can see your paper is being reviewed. While the agents work, ask me anything — methodology, key findings, equations, related work, or a plain-English summary of what you submitted."
           : "Hi! I'm your Scientific Paper Reviewer assistant. Upload a paper first, then I can answer detailed questions about it. Or ask me general research questions.",
-      }]);
+      };
+      setMessages([greeting]);
     }
-  }, [jobId, paperId]);
+  }, [hasPaperContext]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
