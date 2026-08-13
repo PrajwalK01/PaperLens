@@ -16,8 +16,8 @@ from app.rate_limiter import limiter
 from app.routers import review, papers, auth, stats, profile, finetune, chat
 
 app = FastAPI(
-    title="PaperLens",
-    description="Multi-agent AI system for scientific paper peer review",
+    title="Scientific Paper Reviewer",
+    description="Multi-agent AI system for scientific paper peer review — 5 agents, RAG retrieval, integrity checks",
     version="1.0.0",
 )
 
@@ -89,8 +89,8 @@ async def health():
         db_ok = False
     db_type = "supabase/postgres" if DATABASE_URL.startswith("postgresql") else "sqlite"
     return {
-        "status": "ok",   # always return ok so Render doesn't kill the instance
-        "service": "PaperLens",
+        "status": "ok",
+        "service": "Scientific Paper Reviewer",
         "database": db_type,
         "database_connected": db_ok,
     }

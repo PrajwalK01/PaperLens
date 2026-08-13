@@ -105,19 +105,19 @@ export default function Layout() {
 
   // Get paper_id: from review job's paper, or from last uploaded paper stored in localStorage
   const [lastPaperId, setLastPaperId] = React.useState<string | null>(
-    () => localStorage.getItem('paperai_last_paper_id')
+    () => localStorage.getItem('spr_last_paper_id')
   );
 
   // Listen for paper uploads via custom event
   React.useEffect(() => {
     const handler = (e: CustomEvent) => {
       if (e.detail?.paperId) {
-        localStorage.setItem('paperai_last_paper_id', e.detail.paperId);
+        localStorage.setItem('spr_last_paper_id', e.detail.paperId);
         setLastPaperId(e.detail.paperId);
       }
     };
-    window.addEventListener('paperai:paper_uploaded', handler as EventListener);
-    return () => window.removeEventListener('paperai:paper_uploaded', handler as EventListener);
+    window.addEventListener('spr:paper_uploaded', handler as EventListener);
+    return () => window.removeEventListener('spr:paper_uploaded', handler as EventListener);
   }, []);
 
   return (
@@ -215,7 +215,7 @@ export default function Layout() {
 
 // ── AI Chat Panel ─────────────────────────────────────────────────────────────
 function AIChatPanel({ jobId, paperId, onClose }: { jobId: string | null; paperId: string | null; onClose: () => void }) {
-  const storageKey = `paperai_chat_${jobId || paperId || 'general'}`;
+  const storageKey = `spr_chat_${jobId || paperId || 'general'}`;
   const hasPaperContext = !!(jobId || paperId);
   const [messages, setMessages] = useState<ChatMsg[]>(() => {
     try {
@@ -242,7 +242,7 @@ function AIChatPanel({ jobId, paperId, onClose }: { jobId: string | null; paperI
         role: 'assistant',
         content: hasPaperContext
           ? "I can see the paper you uploaded. Ask me anything — methodology, key findings, equations, related work, or get a plain-English summary."
-          : "Hi! I'm your PaperAI research assistant. Upload a paper first, then I can answer detailed questions about it. Or ask me general research questions.",
+          : "Hi! I'm your Scientific Paper Reviewer assistant. Upload a paper first, then I can answer detailed questions about it. Or ask me general research questions.",
       }]);
     }
   }, [jobId, paperId]);
@@ -443,15 +443,15 @@ function TopNav({ user, showUserMenu, onToggleUserMenu,
     <header className="h-14 bg-[#13151f] border-b border-[#252840] flex items-center justify-between px-5 shrink-0 z-10">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm select-none shadow-lg"
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center font-black select-none shadow-lg"
           style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
-          <span className="text-white tracking-tight">PL</span>
+          <span className="text-white text-[10px] font-black tracking-tight">SPR</span>
         </div>
         <div className="flex flex-col leading-none">
-          <span className="font-extrabold text-white text-[15px] tracking-tight group-hover:text-indigo-300 transition-colors">
-            Paper<span style={{ background: 'linear-gradient(90deg,#818cf8,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AI</span>
+          <span className="font-extrabold text-white text-[14px] tracking-tight group-hover:text-indigo-300 transition-colors">
+            Scientific <span style={{ background: 'linear-gradient(90deg,#818cf8,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Paper Reviewer</span>
           </span>
-          <span className="text-[9px] text-zinc-600 font-medium tracking-widest uppercase">AI Peer Review</span>
+          <span className="text-[9px] text-zinc-600 font-medium tracking-widest uppercase">AI Peer Review Platform</span>
         </div>
       </Link>
 

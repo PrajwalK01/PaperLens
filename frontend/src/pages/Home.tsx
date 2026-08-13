@@ -38,7 +38,7 @@ export default function Home() {
       setLoadingMsg('Starting review pipeline…')
       const job = await startReview(paper.id)
       // Notify chat panel about the uploaded paper so it can access it
-      window.dispatchEvent(new CustomEvent('paperai:paper_uploaded', { detail: { paperId: paper.id } }))
+      window.dispatchEvent(new CustomEvent('spr:paper_uploaded', { detail: { paperId: paper.id } }))
       navigate(`/review/${job.id}`)
     } catch (e: unknown) {
       const d = (e as any)?.response?.data?.detail
@@ -61,13 +61,13 @@ export default function Home() {
         </div>
 
         <h1 className="text-2xl font-black text-white mb-1.5" style={{ letterSpacing: '-0.03em' }}>
-          AI Peer Review,{' '}
+          Scientific Paper Review,{' '}
           <span style={{ background: 'linear-gradient(90deg,#818cf8,#a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Instantly
           </span>
         </h1>
         <p className="text-xs text-indigo-300/50 max-w-xs mx-auto leading-relaxed">
-          PaperAI — 5 independent AI agents review your paper in parallel and deliver a structured verdict in minutes.
+          Scientific Paper Reviewer — 5 independent AI agents review your paper in parallel and deliver a structured verdict in minutes.
         </p>
 
         <div className="flex items-center justify-center gap-1.5 mt-3 flex-wrap">

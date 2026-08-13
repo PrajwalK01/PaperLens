@@ -20,8 +20,8 @@ def send_otp_email(email_to: str, otp: str) -> bool:
     smtp_ssl  = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
     smtp_from = os.getenv("SMTP_FROM_EMAIL", smtp_user or "no-reply@paperai.app").strip()
 
-    subject   = "PaperAI — Your Verification Code"
-    body_text = f"Your PaperAI verification code is: {otp}\nThis code expires in 10 minutes."
+    subject   = "Scientific Paper Reviewer — Your Verification Code"
+    body_text = f"Your Scientific Paper Reviewer verification code is: {otp}\nThis code expires in 10 minutes."
     body_html = f"""
 <html><body style="margin:0;padding:0;background:#0d0f1a;font-family:'Inter',sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0f1a;padding:40px 0;">
@@ -39,7 +39,7 @@ def send_otp_email(email_to: str, otp: str) -> bool:
         <td style="padding:40px 40px 32px;">
           <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#e2e4f0;">Verify your email</h1>
           <p style="margin:0 0 28px;font-size:14px;color:rgba(165,180,252,0.6);line-height:1.6;">
-            Enter this code to complete your PaperAI registration. Valid for <strong style="color:#a5b4fc;">10 minutes</strong>.
+            Enter this code to complete your SPR registration. Valid for <strong style="color:#a5b4fc;">10 minutes</strong>.
           </p>
           <div style="background:rgba(99,102,241,0.1);border:2px dashed rgba(99,102,241,0.4);
                       border-radius:12px;padding:24px;text-align:center;margin-bottom:28px;">
@@ -47,7 +47,7 @@ def send_otp_email(email_to: str, otp: str) -> bool:
                          font-family:'Courier New',monospace;">{otp}</span>
           </div>
           <p style="margin:0;font-size:13px;color:rgba(165,180,252,0.4);line-height:1.6;">
-            If you didn't create a PaperAI account, you can safely ignore this email.
+            If you didn't create a Scientific Paper Reviewer account, you can safely ignore this email.
           </p>
         </td>
       </tr>
@@ -55,7 +55,7 @@ def send_otp_email(email_to: str, otp: str) -> bool:
         <td style="padding:20px 40px;background:rgba(99,102,241,0.05);
                    border-top:1px solid rgba(99,102,241,0.15);text-align:center;">
           <p style="margin:0;font-size:11px;color:rgba(165,180,252,0.3);">
-            PaperAI Research Platform &nbsp;·&nbsp; AI-Powered Peer Review
+            Scientific Paper Reviewer &nbsp;·&nbsp; AI-Powered Peer Review
           </p>
         </td>
       </tr>
@@ -87,7 +87,7 @@ def send_otp_email(email_to: str, otp: str) -> bool:
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"]    = f"PaperAI <{smtp_from}>"
+        msg["From"]    = f"Scientific Paper Reviewer <{smtp_from}>"
         msg["To"]      = email_to
         msg.attach(MIMEText(body_text, "plain"))
         msg.attach(MIMEText(body_html, "html"))
