@@ -204,6 +204,10 @@ def _make_primary_node(group: str):
     role = f"group_{group.lower()}_primary"
 
     def node(state: PaperLensState) -> dict:
+        # Stagger Group B by 3s so parallel primaries don't hit rate limits together
+        if group == "B":
+            time.sleep(3)
+
         override = state["model_config"].get(role)
         system = _system(state)
         path = _resolve_path(state, role, override)

@@ -134,7 +134,7 @@ export default function ReviewDashboard() {
     <div className="space-y-5 pb-8 animate-fade-in">
 
       {/* Back */}
-      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-indigo-600 transition-colors font-medium group">
+      <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-indigo-400/60 hover:text-indigo-300 transition-colors font-medium group">
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> New Review
       </Link>
 
@@ -159,36 +159,38 @@ function PaperSection({ job, abstractExpanded, onToggleAbstract }:
   const p = job.paper
 
   const statusBadge: Record<string, string> = {
-    queued:     'bg-slate-100 text-slate-600 border-slate-200',
-    processing: 'bg-blue-50 text-blue-700 border-blue-200',
-    completed:  'bg-emerald-50 text-emerald-700 border-emerald-200',
-    failed:     'bg-red-50 text-red-700 border-red-200',
+    queued:     'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
+    processing: 'bg-blue-500/10 text-blue-300 border-blue-500/20',
+    completed:  'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+    failed:     'bg-red-500/10 text-red-300 border-red-500/20',
   }
 
   return (
     <section>
       {/* Section label */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center">
-          <FileText className="w-3.5 h-3.5 text-blue-600" />
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+          style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)' }}>
+          <FileText className="w-3.5 h-3.5 text-indigo-400" />
         </div>
-        <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">Paper</span>
-        <div className="flex-1 h-px bg-slate-200" />
-        <span className="text-[10px] text-slate-400 font-mono">Submitted for review</span>
+        <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Paper</span>
+        <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.15)' }} />
+        <span className="text-[10px] text-indigo-400/40 font-mono">Submitted for review</span>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="rounded-2xl overflow-hidden animate-fade-in"
+        style={{ background: 'rgba(13,15,26,0.7)', border: '1px solid rgba(99,102,241,0.18)' }}>
         <div className="px-6 py-5">
           {/* Title + status */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-bold text-slate-900 leading-snug">
+              <h1 className="text-xl font-bold text-white leading-snug">
                 {p?.title ?? 'Untitled Paper'}
               </h1>
               {p?.authors && (
                 <div className="flex items-center gap-2 mt-1.5">
-                  <Users className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <p className="text-sm text-slate-500">{p.authors}</p>
+                  <Users className="w-3.5 h-3.5 text-indigo-400/50 flex-shrink-0" />
+                  <p className="text-sm text-indigo-200/60">{p.authors}</p>
                 </div>
               )}
             </div>
@@ -225,18 +227,23 @@ function PaperSection({ job, abstractExpanded, onToggleAbstract }:
 
         {/* Abstract collapsible */}
         {p?.abstract && (
-          <div className="border-t border-slate-100">
+          <div style={{ borderTop: '1px solid rgba(99,102,241,0.12)' }}>
             <button onClick={onToggleAbstract}
-              className="w-full flex items-center justify-between px-6 py-3 hover:bg-slate-50 transition-colors">
+              className="w-full flex items-center justify-between px-6 py-3 transition-colors"
+              style={{ background: 'transparent' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.05)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
               <div className="flex items-center gap-2">
-                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Abstract</span>
+                <BookOpen className="w-3.5 h-3.5 text-indigo-400/50" />
+                <span className="text-xs font-semibold text-indigo-300/60 uppercase tracking-wider">Abstract</span>
               </div>
-              {abstractExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+              {abstractExpanded
+                ? <ChevronUp className="w-4 h-4 text-indigo-400/40" />
+                : <ChevronDown className="w-4 h-4 text-indigo-400/40" />}
             </button>
             {abstractExpanded && (
               <div className="px-6 pb-5 animate-fade-in">
-                <p className="text-sm text-slate-600 leading-relaxed">{p.abstract}</p>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgba(165,180,252,0.6)' }}>{p.abstract}</p>
               </div>
             )}
           </div>
@@ -248,13 +255,14 @@ function PaperSection({ job, abstractExpanded, onToggleAbstract }:
 
 function Chip({ icon, label, color }: { icon: React.ReactNode; label: string; color: string }) {
   const cls: Record<string, string> = {
-    indigo: 'bg-indigo-50 border-indigo-200 text-indigo-700',
-    sky:    'bg-sky-50 border-sky-200 text-sky-700 hover:border-sky-400 cursor-pointer',
-    slate:  'bg-slate-50 border-slate-200 text-slate-500',
-    green:  'bg-emerald-50 border-emerald-200 text-emerald-700',
+    indigo: 'text-indigo-300 border-indigo-500/25',
+    sky:    'text-sky-300 border-sky-500/25 cursor-pointer',
+    slate:  'text-indigo-300/50 border-indigo-500/15',
+    green:  'text-emerald-300 border-emerald-500/25',
   }
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors ${cls[color] ?? cls.slate}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-colors ${cls[color] ?? cls.slate}`}
+      style={{ background: 'rgba(99,102,241,0.06)' }}>
       {icon}{label}
     </span>
   )
@@ -288,11 +296,12 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
     <section>
       {/* Section label */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center">
-          <Cpu className="w-3.5 h-3.5 text-indigo-600" />
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+          style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)' }}>
+          <Cpu className="w-3.5 h-3.5 text-indigo-400" />
         </div>
-        <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">AI Analysis</span>
-        <div className="flex-1 h-px bg-slate-200" />
+        <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">AI Review</span>
+        <div className="flex-1 h-px" style={{ background: 'rgba(99,102,241,0.15)' }} />
 
         {/* Agent avatar dots */}
         <div className="flex items-center gap-1">
@@ -313,9 +322,11 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
 
       <div className="space-y-4">
         {/* Pipeline status card */}
-        <div className={`bg-white border rounded-2xl shadow-sm px-6 py-4 transition-all duration-500 ${
-          isFailed ? 'border-red-200 bg-red-50/30' : isDone ? 'border-emerald-200 bg-emerald-50/20' : isRunning ? 'border-indigo-200' : 'border-slate-200'
-        }`}>
+        <div className="rounded-2xl px-6 py-4 transition-all duration-500 animate-fade-in"
+          style={{
+            background: isFailed ? 'rgba(239,68,68,0.06)' : isDone ? 'rgba(16,185,129,0.06)' : 'rgba(99,102,241,0.06)',
+            border: `1px solid ${isFailed ? 'rgba(239,68,68,0.2)' : isDone ? 'rgba(16,185,129,0.2)' : 'rgba(99,102,241,0.2)'}`,
+          }}>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               {isDone    && <CheckCircle2 className="w-6 h-6 text-emerald-500 flex-shrink-0 animate-count-up" />}
@@ -323,10 +334,10 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
               {isFailed  && <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0" />}
               {!isDone && !isRunning && !isFailed && <Zap className="w-6 h-6 text-slate-400 flex-shrink-0" />}
               <div>
-                <p className="text-sm font-bold text-slate-800">
+                <p className="text-sm font-bold text-white">
                   {isDone ? 'Analysis Complete' : isRunning ? 'Running Multi-Agent Pipeline…' : isFailed ? 'Pipeline Failed' : 'Queued'}
                 </p>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-indigo-300/50 mt-0.5">
                   {isDone
                     ? `All ${total} agents finished${job.completed_at ? ' · ' + new Date(job.completed_at).toLocaleTimeString() : ''}`
                     : `${doneCount} of ${total} agents complete`}
@@ -368,25 +379,29 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
 
               {isDone && job.final_review?.final_scores?.overall != null && (
                 <div className="text-right">
-                  <p className="text-3xl font-black tabular-nums text-indigo-600 animate-count-up">
+                  <p className="text-3xl font-black tabular-nums text-indigo-300 animate-count-up">
                     {job.final_review.final_scores.overall.toFixed(1)}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">out of 10</p>
+                  <p className="text-[10px] text-indigo-400/40 mt-0.5">out of 10</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Progress bar */}
-          <div className="mt-4 h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-700 ease-out ${
-              isFailed ? 'bg-red-400' : isDone ? 'bg-emerald-500' : 'bg-gradient-to-r from-indigo-500 to-blue-400'
-            }`} style={{ width: `${pct}%` }} />
+          <div className="mt-4 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(99,102,241,0.1)' }}>
+            <div className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{
+                width: `${pct}%`,
+                background: isFailed ? '#ef4444' : isDone
+                  ? 'linear-gradient(90deg,#10b981,#6ee7b7)'
+                  : 'linear-gradient(90deg,#6366f1,#a78bfa)',
+              }} />
           </div>
 
           {/* Stage labels */}
           {isRunning && timeEstimate && (
-            <div className="mt-2 flex justify-between text-[9px] text-slate-400 font-medium">
+            <div className="mt-2 flex justify-between text-[9px] font-medium" style={{ color: 'rgba(99,102,241,0.4)' }}>
               <span>Reviewing…</span>
               <span>Est. {timeEstimate.display} total</span>
             </div>
@@ -406,7 +421,10 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
           <div ref={comparisonRef}>
             {!showComparison && !job.final_review && (
               <button onClick={onToggleComparison}
-                className="w-full py-3 border border-slate-200 bg-white rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all">
+                className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
+                style={{ border: '1px solid rgba(99,102,241,0.2)', background: 'rgba(99,102,241,0.05)', color: '#a5b4fc' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.1)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.05)' }}>
                 View Group A vs Group B Debate
               </button>
             )}
