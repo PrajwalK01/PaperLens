@@ -23,7 +23,7 @@ export default function CircularScore({ value, size = 120, strokeWidth = 8 }: Pr
   return (
     <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }} aria-hidden="true">
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(68,42,27,0.6)" strokeWidth={strokeWidth} />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(99,102,241,0.15)" strokeWidth={strokeWidth} />
         <circle cx={size/2} cy={size/2} r={r} fill="none"
           stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={offset}
@@ -32,7 +32,7 @@ export default function CircularScore({ value, size = 120, strokeWidth = 8 }: Pr
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
         className="animate-count-up">
         <span style={{ fontSize: 22, fontWeight: 900, color, fontFamily: 'monospace', lineHeight: 1 }}>{value.toFixed(1)}</span>
-        <span style={{ fontSize: 9, color: '#7a5035', marginTop: 1 }}>/ 10</span>
+        <span style={{ fontSize: 9, color: 'rgba(165,180,252,0.4)', marginTop: 1 }}>/ 10</span>
       </div>
     </div>
   )
