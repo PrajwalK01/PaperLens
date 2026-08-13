@@ -30,15 +30,15 @@ export default function ScoreBar({ label, value, max = 10, animate = true }: Pro
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <span style={{ fontSize: 11, color: '#7a5035', width: 112, flexShrink: 0, fontWeight: 500 }}>{pretty}</span>
-      <div style={{ flex: 1, height: 6, borderRadius: 99, overflow: 'hidden', background: 'rgba(68,42,27,0.7)' }}>
+      <span style={{ fontSize: 11, color: 'rgba(165,180,252,0.5)', width: 112, flexShrink: 0, fontWeight: 500 }}>{pretty}</span>
+      <div style={{ flex: 1, height: 6, borderRadius: 99, overflow: 'hidden', background: 'rgba(99,102,241,0.12)' }}>
         <div style={{
           width: `${w}%`, height: '100%', borderRadius: 99,
           background: barColor(value),
           transition: 'width 0.7s cubic-bezier(0.4,0,0.2,1)',
         }} role="progressbar" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max} />
       </div>
-      <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#c8a87a', width: 18, textAlign: 'right' }}>
+      <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#a5b4fc', width: 18, textAlign: 'right' }}>
         {value}
       </span>
     </div>

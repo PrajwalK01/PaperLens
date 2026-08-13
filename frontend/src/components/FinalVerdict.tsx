@@ -117,30 +117,25 @@ function downloadTextAsPdf(fr: FinalReview) {
 
 // ── Expandable section ────────────────────────────────────────────────────────
 
-function Section({
-  title,
-  defaultOpen = false,
-  children,
-}: {
-  title: string
-  defaultOpen?: boolean
-  children: React.ReactNode
-}) {
+function Section({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="border border-navy-800/50 rounded-xl overflow-hidden">
+    <div className="rounded-xl overflow-hidden"
+      style={{ background: 'rgba(13,15,26,0.7)', border: '1px solid rgba(99,102,241,0.15)' }}>
       <button
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-navy-800/30 transition-colors"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <span className="text-sm font-semibold text-slate-300">{title}</span>
+        className="w-full flex items-center justify-between px-4 py-3 text-left transition-all"
+        style={{ background: 'transparent' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.06)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        onClick={() => setOpen(v => !v)}>
+        <span className="text-sm font-semibold text-indigo-200/70">{title}</span>
         {open
-          ? <ChevronUp className="w-4 h-4 text-slate-500" />
-          : <ChevronDown className="w-4 h-4 text-slate-500" />}
+          ? <ChevronUp className="w-4 h-4 text-indigo-400/40" />
+          : <ChevronDown className="w-4 h-4 text-indigo-400/40" />}
       </button>
       {open && (
-        <div className="px-4 pb-4 pt-1 border-t border-navy-800/40 animate-fade-in">
+        <div className="px-4 pb-4 pt-1 animate-fade-in"
+          style={{ borderTop: '1px solid rgba(99,102,241,0.1)' }}>
           {children}
         </div>
       )}
@@ -156,14 +151,16 @@ export default function FinalVerdict({ finalReview: fr, jobId, onShowComparison 
   return (
     <div className="space-y-5 animate-slide-up">
       {/* Hero card */}
-      <div className="rounded-xl border border-amber-600/30 bg-gradient-to-br from-navy-900 via-navy-900 to-amber-950/20 overflow-hidden shadow-amber">
+      <div className="rounded-xl overflow-hidden animate-fade-in"
+        style={{ background: 'rgba(13,15,26,0.8)', border: '1px solid rgba(245,158,11,0.25)' }}>
         {/* Top strip */}
-        <div className="bg-amber-500/10 border-b border-amber-600/20 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-3"
+          style={{ background: 'rgba(245,158,11,0.08)', borderBottom: '1px solid rgba(245,158,11,0.15)' }}>
           <div className="flex items-center gap-3">
             <VerdictStar />
             <div>
-              <p className="section-label text-amber-400/80">Final Verdict</p>
-              <h2 className="text-xl font-bold text-slate-100">Consolidated Review</h2>
+              <p className="text-[9px] font-black uppercase tracking-widest mb-0.5" style={{ color: 'rgba(251,191,36,0.6)' }}>Final Verdict</p>
+              <h2 className="text-xl font-bold text-white">Consolidated Review</h2>
             </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -199,32 +196,35 @@ export default function FinalVerdict({ finalReview: fr, jobId, onShowComparison 
       </div>
 
       {/* Consolidated summary */}
-      <div className="card">
-        <p className="section-label mb-2">Consolidated Summary</p>
-        <p className="text-sm text-slate-300 leading-relaxed font-paper">
+      <div className="rounded-xl p-5 animate-fade-in"
+        style={{ background: 'rgba(13,15,26,0.7)', border: '1px solid rgba(99,102,241,0.18)' }}>
+        <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{ color: 'rgba(99,102,241,0.45)' }}>Consolidated Summary</p>
+        <p className="text-sm leading-relaxed" style={{ color: 'rgba(165,180,252,0.7)' }}>
           {fr.consolidated_summary}
         </p>
       </div>
 
       {/* Strengths + Weaknesses side by side */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="card border-green-900/40">
-          <p className="section-label text-green-500 mb-3">Key Strengths</p>
+        <div className="rounded-xl p-5 animate-fade-in"
+          style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}>
+          <p className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color: 'rgba(110,231,183,0.6)' }}>Key Strengths</p>
           <ul className="space-y-2">
             {fr.key_strengths.map((s, i) => (
-              <li key={i} className="flex gap-2 text-sm text-slate-300">
-                <span className="text-green-500 font-bold flex-shrink-0 mt-0.5">+</span>
+              <li key={i} className="flex gap-2 text-sm" style={{ color: 'rgba(165,180,252,0.65)' }}>
+                <span className="font-bold flex-shrink-0 mt-0.5" style={{ color: '#6ee7b7' }}>+</span>
                 {s}
               </li>
             ))}
           </ul>
         </div>
-        <div className="card border-red-900/40">
-          <p className="section-label text-red-400 mb-3">Key Weaknesses</p>
+        <div className="rounded-xl p-5 animate-fade-in"
+          style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
+          <p className="text-[9px] font-black uppercase tracking-widest mb-3" style={{ color: 'rgba(252,165,165,0.6)' }}>Key Weaknesses</p>
           <ul className="space-y-2">
             {fr.key_weaknesses.map((w, i) => (
-              <li key={i} className="flex gap-2 text-sm text-slate-300">
-                <span className="text-red-400 font-bold flex-shrink-0 mt-0.5">−</span>
+              <li key={i} className="flex gap-2 text-sm" style={{ color: 'rgba(165,180,252,0.65)' }}>
+                <span className="font-bold flex-shrink-0 mt-0.5" style={{ color: '#fca5a5' }}>−</span>
                 {w}
               </li>
             ))}
@@ -235,38 +235,38 @@ export default function FinalVerdict({ finalReview: fr, jobId, onShowComparison 
       {/* Expandable sections */}
       <div className="space-y-2">
         <Section title="Detailed Final Feedback" defaultOpen>
-          <p className="text-sm text-slate-400 leading-relaxed">{fr.detailed_final_feedback}</p>
+          <p className="text-sm leading-relaxed" style={{ color: 'rgba(165,180,252,0.6)' }}>{fr.detailed_final_feedback}</p>
         </Section>
         <Section title="Synthesis Rationale — How the Judge Decided">
-          <p className="text-sm text-slate-400 leading-relaxed">{fr.synthesis_rationale}</p>
+          <p className="text-sm leading-relaxed" style={{ color: 'rgba(165,180,252,0.6)' }}>{fr.synthesis_rationale}</p>
         </Section>
       </div>
 
       {/* Action bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <div className="flex gap-2">
-          <button
-            onClick={() => downloadTextAsPdf(fr)}
-            className="btn-secondary text-sm gap-2"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Download PDF
+          <button onClick={() => downloadTextAsPdf(fr)}
+            className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg transition-all"
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#a5b4fc' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.18)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)')}>
+            <Download className="w-3.5 h-3.5" /> Download PDF
           </button>
-          <button
-            onClick={() => downloadJson(fr, `PaperLens-verdict-${jobId ?? 'export'}.json`)}
-            className="btn-secondary text-sm gap-2"
-          >
-            <FileJson className="w-3.5 h-3.5" />
-            Download JSON
+          <button onClick={() => downloadJson(fr, `PaperAI-verdict-${jobId ?? 'export'}.json`)}
+            className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg transition-all"
+            style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#a5b4fc' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.18)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)')}>
+            <FileJson className="w-3.5 h-3.5" /> Download JSON
           </button>
         </div>
         {onShowComparison && (
-          <button
-            onClick={onShowComparison}
-            className="btn-ghost text-sm"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            View Group A / B comparison
+          <button onClick={onShowComparison}
+            className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
+            style={{ color: 'rgba(99,102,241,0.5)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#818cf8')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(99,102,241,0.5)')}>
+            <ExternalLink className="w-3.5 h-3.5" /> View Group A / B comparison
           </button>
         )}
       </div>
