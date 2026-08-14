@@ -1,10 +1,11 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronUp, Download, FileJson, ExternalLink } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ChevronDown, ChevronUp, Download, FileJson, ExternalLink, BookOpen, Star } from 'lucide-react'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
   ResponsiveContainer, Tooltip,
 } from 'recharts'
 import type { FinalReview } from '../api'
+import { getRelatedPapers, type RelatedPaper } from '../api'
 import ScoreBar from './ScoreBar'
 import RecommendationBadge from './RecommendationBadge'
 import CircularScore from './CircularScore'
@@ -12,6 +13,7 @@ import CircularScore from './CircularScore'
 interface Props {
   finalReview: FinalReview
   jobId?: string
+  paperId?: string
   onShowComparison?: () => void
 }
 
@@ -145,8 +147,18 @@ function Section({ title, defaultOpen = false, children }: { title: string; defa
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function FinalVerdict({ finalReview: fr, jobId, onShowComparison }: Props) {
+export default function FinalVerdict({ finalReview: fr, jobId, paperId, onShowComparison }: Props) {
   const conf = CONFIDENCE_MAP[fr.confidence]
+  const [relatedPapers, setRelatedPapers] = useState<RelatedPaper[]>([])
+  const [loadingRelated, setLoadingRelated] = useState(false)
+
+  useEffect(() => {
+    if (!paperId) return
+    setLoadingRelated(true)
+    getRelatedPapers(paperId, 5)
+      .then(setRelatedPapers)
+      .finally(() => setLoadingRelated(false))
+  }, [paperId])
 
   return (
     <div className="space-y-5 animate-slide-up">
@@ -240,6 +252,55 @@ export default function FinalVerdict({ finalReview: fr, jobId, onShowComparison 
         <Section title="Synthesis Rationale — How the Judge Decided">
           <p className="text-sm leading-relaxed" style={{ color: 'rgba(165,180,252,0.6)' }}>{fr.synthesis_rationale}</p>
         </Section>
+      </div>
+
+      {/* Related Papers from OpenAlex */}
+      <div className="rounded-xl overflow-hidden animate-fade-in"
+        style={{ background: 'rgba(13,15,26,0.7)', border: '1px solid rgba(99,102,241,0.18)' }}>
+        <div className="px-5 py-4 flex items-center gap-2"
+          style={{ borderBottom: '1px solid rgba(99,102,241,0.1)' }}>
+          <BookOpen className="w-4 h-4 text-indigo-400" />
+          <p className="text-sm font-bold text-white">Related Papers</p>
+          <span className="text-[10px] text-indigo-400/40 ml-1">via OpenAlex</span>
+        </div>
+        <div className="p-4 space-y-2">
+          {loadingRelated ? (
+            <div className="flex items-center gap-2 py-2" style={{ color: 'rgba(165,180,252,0.4)' }}>
+              <div className="w-3 h-3 border border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+              <span className="text-xs">Searching OpenAlex…</span>
+            </div>
+          ) : relatedPapers.length === 0 ? (
+            <p className="text-xs" style={{ color: 'rgba(165,180,252,0.35)' }}>No related papers found.</p>
+          ) : (
+            relatedPapers.map((p, i) => (
+              <a key={i} href={p.url} target="_blank" rel="noopener noreferrer"
+                className="flex items-start gap-3 p-3 rounded-lg transition-all group"
+                style={{ background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.1)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.04)')}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-indigo-200/80 truncate group-hover:text-white transition-colors">
+                    {p.title}
+                  </p>
+                  <p className="text-[10px] mt-0.5 truncate" style={{ color: 'rgba(165,180,252,0.4)' }}>
+                    {p.authors}{p.year ? ` · ${p.year}` : ''}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1" style={{ color: 'rgba(165,180,252,0.4)' }}>
+                    <Star className="w-2.5 h-2.5" />
+                    <span className="text-[9px] font-mono">{p.citations.toLocaleString()}</span>
+                  </div>
+                  {p.open_access && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(16,185,129,0.12)', color: '#6ee7b7' }}>OA</span>
+                  )}
+                </div>
+                <ExternalLink className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: 'rgba(99,102,241,0.35)' }} />
+              </a>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Action bar */}

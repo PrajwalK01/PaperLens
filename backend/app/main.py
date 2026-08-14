@@ -15,6 +15,7 @@ from slowapi.errors import RateLimitExceeded
 from app.database import create_tables
 from app.rate_limiter import limiter
 from app.routers import review, papers, auth, stats, profile, finetune, chat
+from app.routers import related as related_router
 
 app = FastAPI(
     title="Scientific Paper Reviewer",
@@ -107,6 +108,7 @@ async def ping():
 
 
 app.include_router(papers.router, prefix="/api/papers", tags=["papers"])
+app.include_router(related_router.router)
 app.include_router(review.router, prefix="/api", tags=["review"])
 app.include_router(auth.router)
 app.include_router(stats.router)

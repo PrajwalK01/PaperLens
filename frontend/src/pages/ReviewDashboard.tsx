@@ -421,7 +421,7 @@ function AiSection({ job, doneCount, bothCriticsDone, showComparison, comparison
 
         {/* Final Verdict */}
         {job.final_review && (
-          <FinalVerdict finalReview={job.final_review} jobId={job.id} onShowComparison={onShowComparison} />
+          <FinalVerdict finalReview={job.final_review} jobId={job.id} paperId={job.paper_id} onShowComparison={onShowComparison} />
         )}
 
         {/* Group comparison */}

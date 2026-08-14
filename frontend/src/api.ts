@@ -304,6 +304,26 @@ export async function getHistory(): Promise<ReviewJobSummary[]> {
   return res.data;
 }
 
+// ── Related Papers (OpenAlex) ────────────────────────────────────────────────
+
+export interface RelatedPaper {
+  title: string;
+  authors: string;
+  year: number | null;
+  citations: number;
+  url: string;
+  open_access: boolean;
+}
+
+export async function getRelatedPapers(paperId: string, limit = 5): Promise<RelatedPaper[]> {
+  try {
+    const res = await api.get(`/api/papers/${paperId}/related`, { params: { limit } });
+    return res.data.related || [];
+  } catch {
+    return [];
+  }
+}
+
 // ── WebSocket ────────────────────────────────────────────────────────────────────
 
 export function openReviewSocket(
