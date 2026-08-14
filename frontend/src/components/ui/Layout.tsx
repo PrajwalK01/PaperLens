@@ -136,8 +136,8 @@ export default function Layout() {
           {/* ── 3-Column Workspace ─────────────────────────────────────── */}
           <div className="flex-1 flex overflow-hidden">
 
-            {/* LEFT: Activity + Nav */}
-            <aside className="w-[240px] bg-[#13151f] flex flex-col shrink-0 text-slate-300 border-r border-[#252840]">
+            {/* LEFT: Activity + Nav — hidden on mobile */}
+            <aside className="hidden md:flex w-[240px] bg-[#13151f] flex-col shrink-0 text-slate-300 border-r border-[#252840]">
               <div className="px-4 pt-4 pb-3 border-b border-[#252840]">
                 <h2 className="font-bold text-white text-sm tracking-tight">Activity History</h2>
                 <p className="text-[10px] text-indigo-400/60 mt-0.5">Your project timeline</p>
@@ -192,7 +192,9 @@ export default function Layout() {
 
             {/* RIGHT: AI Chat Panel */}
             {chatOpen && (
-              <AIChatPanel jobId={chatJobId} paperId={lastPaperId} onClose={() => setChatOpen(false)} />
+              <div className="hidden lg:block">
+                <AIChatPanel jobId={chatJobId} paperId={lastPaperId} onClose={() => setChatOpen(false)} />
+              </div>
             )}
           </div>
 

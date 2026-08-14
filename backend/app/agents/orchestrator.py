@@ -112,7 +112,7 @@ def _parse_llm_json(raw: str) -> Dict[str, Any]:
 
 
 def _call_llm(role: str, override_model: Optional[str], system_text: str, human_text: str, job_id: Optional[str] = None) -> tuple:
-    """Plain (non-agentic) LLM call with retries — used when AGENTIC_RAG_ENABLED=false."""
+    """Plain (non-agentic) LLM call with retries and Groq fallback."""
     llm, model_name = get_model_for_role(role, override_model)
     messages = [SystemMessage(content=system_text), HumanMessage(content=human_text)]
 
@@ -131,11 +131,22 @@ def _call_llm(role: str, override_model: Optional[str], system_text: str, human_
         except Exception as exc:
             last_exc = exc
             err_str = str(exc).lower()
-            # Rate limit — wait longer before retry
             wait = RETRY_DELAY * (2 ** attempt)
             if "rate" in err_str or "429" in err_str or "quota" in err_str:
                 wait = max(wait, 15)
                 logger.warning("Rate limit hit (role=%s attempt=%d), waiting %ds", role, attempt + 1, wait)
+            elif "empty" in err_str or "column 1" in err_str or "expecting value" in err_str:
+                # Empty response from NVIDIA — switch to Groq fallback immediately
+                logger.warning("Empty/invalid response from %s (role=%s) — trying Groq fallback", model_name, role)
+                try:
+                    groq_llm, groq_model = get_model_for_role(role, "llama-3.3-70b-versatile")
+                    response = groq_llm.invoke(messages)
+                    parsed = _parse_llm_json(response.content)
+                    logger.info("Groq fallback succeeded for role=%s", role)
+                    return parsed, groq_model
+                except Exception as groq_exc:
+                    logger.warning("Groq fallback also failed: %s", groq_exc)
+                    last_exc = groq_exc
             else:
                 logger.warning("LLM call failed (role=%s attempt=%d): %s", role, attempt + 1, exc)
             if attempt < MAX_RETRIES:

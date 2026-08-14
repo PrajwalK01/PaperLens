@@ -140,7 +140,15 @@ export default function ProgressTracker({ responses, jobStatus }: { responses: A
               {/* Error */}
               {status === 'failed' && ar?.error_message && (
                 <p className="mt-1.5 ml-14 text-xs text-red-400/80 leading-relaxed animate-fade-in">
-                  {ar.error_message}
+                  {ar.error_message.includes('LLM call failed')
+                    ? 'AI service temporarily unavailable — try again'
+                    : ar.error_message.includes('rate') || ar.error_message.includes('429')
+                    ? 'Rate limit hit — the AI provider was overloaded'
+                    : ar.error_message.includes('timeout') || ar.error_message.includes('timed out')
+                    ? 'Request timed out — paper may be too large or service is slow'
+                    : ar.error_message.length > 80
+                    ? 'Review failed — please try submitting the paper again'
+                    : ar.error_message}
                 </p>
               )}
             </div>

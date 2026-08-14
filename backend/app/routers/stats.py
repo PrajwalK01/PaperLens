@@ -327,6 +327,20 @@ def get_admin_stats(
     )
     active_models = [m[0] for m in models_used]
 
+    # Real daily review counts for last 7 days
+    daily_reviews = []
+    day_names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    for i in range(6, -1, -1):
+        day = datetime.utcnow().date() - timedelta(days=i)
+        count = db.query(ReviewJob).filter(
+            func.date(ReviewJob.created_at) == day
+        ).count()
+        daily_reviews.append({
+            "name": day_names[day.weekday()],
+            "reviews": count,
+            "date": day.isoformat(),
+        })
+
     return {
         "total_reviews": total_reviews,
         "total_users": total_users,
@@ -338,6 +352,7 @@ def get_admin_stats(
         "average_score": avg_score,
         "active_models": active_models,
         "active_model_count": len(active_models),
+        "daily_reviews": daily_reviews,
     }
 
 

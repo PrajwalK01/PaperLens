@@ -19,7 +19,6 @@ function timeAgo(isoDate: string): string {
 
 type Filter = 'all' | 'Accept' | 'Minor Revision' | 'Major Revision' | 'Reject' | 'processing'
 const FILTERS: Filter[] = ['all', 'Accept', 'Minor Revision', 'Major Revision', 'Reject', 'processing']
-
 function recStyle(rec: string) {
   switch (rec) {
     case 'Accept':         return { bg: 'rgba(16,185,129,0.12)', color: '#6ee7b7', border: 'rgba(16,185,129,0.3)' }
@@ -47,6 +46,7 @@ export default function History() {
   const [error, setError]     = useState<string | null>(null)
   const [search, setSearch]   = useState('')
   const [filter, setFilter]   = useState<Filter>('all')
+  const [minScore, setMinScore] = useState<number | null>(null)
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
@@ -81,7 +81,8 @@ export default function History() {
     const matchFilter = filter === 'all'
       || (filter === 'processing' && (j.status === 'processing' || j.status === 'queued'))
       || j.final_recommendation === filter
-    return matchSearch && matchFilter
+    const matchScore = minScore === null || (j.overall_score !== null && j.overall_score >= minScore)
+    return matchSearch && matchFilter && matchScore
   })
 
   return (
@@ -131,6 +132,24 @@ export default function History() {
               {f === 'all' ? 'All' : f === 'processing' ? 'In Progress' : f}
             </button>
           ))}
+          {/* Score filter */}
+          <select
+            value={minScore ?? ''}
+            onChange={e => setMinScore(e.target.value ? Number(e.target.value) : null)}
+            className="text-[11px] font-semibold px-2 py-1.5 rounded-lg outline-none"
+            style={{ background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.15)', color: 'rgba(165,180,252,0.55)' }}>
+            <option value="">All Scores</option>
+            <option value="7">≥ 7.0</option>
+            <option value="6">≥ 6.0</option>
+            <option value="5">≥ 5.0</option>
+          </select>
+          {(search || filter !== 'all' || minScore !== null) && (
+            <button onClick={() => { setSearch(''); setFilter('all'); setMinScore(null); }}
+              className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-all"
+              style={{ background: 'rgba(239,68,68,0.1)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.2)' }}>
+              Clear
+            </button>
+          )}
         </div>
       </div>
 

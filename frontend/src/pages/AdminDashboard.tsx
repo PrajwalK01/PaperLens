@@ -18,11 +18,12 @@ export default function AdminDashboard() {
       setError(null);
       const [statsRes] = await Promise.all([getAdminStats()]);
       setStats(statsRes);
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const weekly = days.map((name, i) => ({
-        name,
-        reviews: Math.max(0, Math.floor((statsRes.total_reviews / 7) + Math.sin(i) * 3)),
-      }));
+      // Use real daily reviews from backend instead of fake data
+      const weekly = statsRes.daily_reviews || [];
+      if (weekly.length === 0) {
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        weekly.push(...days.map(name => ({ name, reviews: 0 })));
+      }
       setChartData(weekly);
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'Failed to load stats');
@@ -109,8 +110,7 @@ export default function AdminDashboard() {
                 <Tooltip
                   contentStyle={{ background: '#13151f', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '10px', color: '#a5b4fc' }}
                   labelStyle={{ color: '#e2e4f0' }} />
-                <Line type="monotone" dataKey="reviews" stroke="#6366f1" strokeWidth={2.5}
-                  dot={{ r: 4, fill: '#6366f1', strokeWidth: 0 }}
+                <Line type="monotone" dataKey="reviews" stroke="#6366f1" strokeWidth={2.5}                  dot={{ r: 4, fill: '#6366f1', strokeWidth: 0 }}
                   activeDot={{ r: 6, fill: '#a78bfa' }} />
               </LineChart>
             </ResponsiveContainer>

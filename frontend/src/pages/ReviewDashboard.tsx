@@ -100,12 +100,24 @@ export default function ReviewDashboard() {
       } catch { /* ignore */ }
     }
     ws.onerror = () => {
+      if (pollRef.current) clearInterval(pollRef.current)
       pollRef.current = setInterval(() => {
         getReview(jobId!).then(j => {
           setJob(j)
           if (j.status === 'completed' || j.status === 'failed') clearInterval(pollRef.current!)
         }).catch(() => {})
-      }, 4000)
+      }, 3000)
+    }
+    ws.onclose = () => {
+      // Also poll on close to catch completion while WS was down
+      if (!pollRef.current) {
+        pollRef.current = setInterval(() => {
+          getReview(jobId!).then(j => {
+            setJob(j)
+            if (j.status === 'completed' || j.status === 'failed') clearInterval(pollRef.current!)
+          }).catch(() => {})
+        }, 3000)
+      }
     }
     return () => { ws.close(); if (pollRef.current) clearInterval(pollRef.current) }
   }, [jobId])
