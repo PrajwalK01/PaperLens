@@ -9,11 +9,20 @@ import asyncio
 import json
 import logging
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
+
+# The main event loop — stored at startup so background threads can schedule work on it
+_main_loop: Optional[asyncio.AbstractEventLoop] = None
+
+
+def set_main_loop(loop: asyncio.AbstractEventLoop):
+    """Call this at app startup to register the main event loop."""
+    global _main_loop
+    _main_loop = loop
 
 
 class ConnectionManager:
@@ -46,13 +55,22 @@ class ConnectionManager:
 
     def broadcast_sync(self, job_id: str, message: dict):
         """
-        Thread-safe bridge: schedule the coroutine on the running event loop.
+        Thread-safe bridge: schedule the coroutine on the main event loop.
         Called from background threads (the LangGraph worker).
+        Uses the stored main loop instead of asyncio.get_event_loop()
+        which fails in non-async threads.
         """
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
+        global _main_loop
+        if _main_loop is None or not _main_loop.is_running():
+            # Fallback: try to get any running loop
+            try:
+                loop = asyncio.get_running_loop()
                 asyncio.run_coroutine_threadsafe(self.broadcast(job_id, message), loop)
+            except RuntimeError:
+                logger.debug("broadcast_sync: no running event loop, message dropped for job=%s", job_id)
+            return
+        try:
+            asyncio.run_coroutine_threadsafe(self.broadcast(job_id, message), _main_loop)
         except Exception as exc:
             logger.warning("broadcast_sync failed: %s", exc)
 

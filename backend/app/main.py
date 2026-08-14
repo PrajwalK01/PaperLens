@@ -4,6 +4,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import asyncio
 import os
 
 from fastapi import FastAPI, Request
@@ -76,6 +77,9 @@ async def add_security_headers(request: Request, call_next):
 
 @app.on_event("startup")
 async def startup_event():
+    # Store the main event loop so background threads can broadcast WebSocket messages
+    from app.ws_manager import set_main_loop
+    set_main_loop(asyncio.get_event_loop())
     create_tables()
 
 
